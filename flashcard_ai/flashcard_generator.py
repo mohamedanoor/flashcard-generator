@@ -108,8 +108,8 @@ def create_cloze_deletions(text):
     sentences = re.split(r'(?<=[.!?])\s+', text)
     
     for sentence in sentences:
-        # Only process substantial sentences
-        if len(sentence.split()) >= a:
+        # Only process substantial sentences (min 6 words)
+        if len(sentence.split()) >= 6:  # Fixed: Changed undefined 'a' to '6'
             # Find important words (nouns, technical terms)
             words = sentence.split()
             

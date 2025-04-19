@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from flashcard_ai.text_processor import process_text
 from flashcard_ai.flashcard_generator import generate_flashcards
 
-def search_topic(topic, num_results=3):
+def search_topic(topic, num_results=2):
     """
     Search for information about a topic
     
@@ -75,8 +75,8 @@ def search_topic(topic, num_results=3):
                             if len(p_text) > 100 and topic.lower() in p_text.lower():
                                 relevant_paragraphs.append(p_text)
                                 
-                        # Add up to 3 relevant paragraphs
-                        extracted_text.extend(relevant_paragraphs[:3])
+                        # Add up to 2 relevant paragraphs to save memory
+                        extracted_text.extend(relevant_paragraphs[:2])
                         
                 except Exception as e:
                     print(f"Error fetching page content: {e}")
@@ -88,49 +88,68 @@ def search_topic(topic, num_results=3):
         if len(combined_text) < 500:
             combined_text += f"\n\n{topic} is an important subject that has various key aspects worth studying. Understanding {topic} requires examining its main components and historical context."
         
+        # Limit text length to avoid memory issues
+        if len(combined_text) > 2000:
+            combined_text = combined_text[:2000]
+            
         return combined_text
         
     except Exception as e:
         print(f"Error in topic search: {e}")
         return f"Information about {topic} could not be retrieved due to an error."
 
-def generate_topic_flashcards(topic, num_cards=10):
+def generate_topic_flashcards(topic, difficulty='easy', include_definitions=True, include_facts=True, include_dates=False):
     """
     Generate flashcards for a specific topic
     
     Args:
         topic (str): The topic to generate flashcards for
-        num_cards (int): Maximum number of flashcards to generate
+        difficulty (str): Difficulty level ('easy', 'medium', 'hard')
+        include_definitions (bool): Whether to include definitions
+        include_facts (bool): Whether to include key facts
+        include_dates (bool): Whether to include dates/timeline
         
     Returns:
-        list: List of flashcard dictionaries with 'question' and 'answer' keys
+        dict: Dictionary containing different types of flashcards
     """
     try:
         # Search for information about the topic
-        topic_text = search_topic(topic)
+        topic_text = search_topic(topic, num_results=2)  # Limit to 2 results to save memory
         
         # Process the text
         processed_text = process_text(topic_text)
         
         # Generate flashcards using the existing generator
-        flashcards = generate_flashcards(processed_text, num_cards)
+        flashcards = generate_flashcards(
+            processed_text, 
+            difficulty=difficulty,
+            extract_definitions=include_definitions,
+            create_cloze=include_facts,
+            question_answer=True
+        )
         
         # Add topic context to beginning of the list
-        flashcards.insert(0, {
-            "question": f"What is the main focus of {topic}?",
-            "answer": f"These flashcards cover key information about {topic}."
-        })
+        if "main" in flashcards and isinstance(flashcards["main"], list):
+            flashcards["main"].insert(0, {
+                "question": f"What is the main focus of {topic}?",
+                "answer": f"These flashcards cover key information about {topic}."
+            })
+        else:
+            flashcards["main"] = [{
+                "question": f"What is {topic}?", 
+                "answer": f"These flashcards cover key information about {topic}."
+            }]
         
         return flashcards
         
     except Exception as e:
         print(f"Error generating topic flashcards: {e}")
         # Return fallback flashcards
-        return [
-            {"question": f"What is {topic}?", 
-             "answer": f"This is a key concept related to {topic}."},
-            {"question": f"Why is {topic} important?", 
-             "answer": f"Understanding {topic} is important for several reasons."},
-            {"question": f"What are some key aspects of {topic}?", 
-             "answer": f"There are several important aspects to understand about {topic}."}
-        ]
+        return {
+            "main": [
+                {"question": f"What is {topic}?", 
+                 "answer": f"This is a key concept related to {topic}."},
+                {"question": f"Why is {topic} important?", 
+                 "answer": f"Understanding {topic} is important for several reasons."}
+            ]
+        }
