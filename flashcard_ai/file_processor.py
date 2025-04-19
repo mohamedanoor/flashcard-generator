@@ -52,7 +52,7 @@ def process_files(files, difficulty='easy', extract_all=True, use_ocr=False):
         return {
             "main": [
                 {"question": "No content could be extracted from the uploaded files.", 
-                 "answer": "Please try different files or formats."}
+                 "answer": "Try a different file format or check if the file contains extractable text."}
             ]
         }
     
@@ -63,7 +63,7 @@ def process_files(files, difficulty='easy', extract_all=True, use_ocr=False):
     return generate_flashcards(
         processed_text, 
         difficulty=difficulty,
-        extract_definitions=True,
+        extract_definitions=extract_all,
         create_cloze=extract_all,
         question_answer=True
     )
@@ -84,41 +84,28 @@ def extract_text_from_file(file_path, filename, use_ocr=False):
     
     # Plain text file
     if ext in ['.txt', '.md', '.csv']:
-        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-            return f.read()
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                return f.read()
+        except Exception as e:
+            print(f"Error reading text file: {e}")
+            return f"Could not read {filename} due to an error: {str(e)}"
+    
+    # For the initial implementation, let's handle just plain text files
+    # and provide informational messages for other formats
     
     # PDF file
     elif ext == '.pdf':
-        try:
-            from pdfminer.high_level import extract_text
-            return extract_text(file_path)
-        except ImportError:
-            return "PDF extraction requires pdfminer.six package."
+        return f"PDF support is coming soon. Upload a text file (.txt) for now."
     
     # Word document
     elif ext in ['.docx', '.doc']:
-        try:
-            if ext == '.docx':
-                import docx
-                doc = docx.Document(file_path)
-                return '\n\n'.join([paragraph.text for paragraph in doc.paragraphs])
-            else:
-                # .doc files need additional processing
-                return "Legacy .doc format is not supported. Please convert to .docx."
-        except ImportError:
-            return "Word document extraction requires python-docx package."
+        return f"Word document support is coming soon. Upload a text file (.txt) for now."
     
     # Image file
-    elif ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff'] and use_ocr:
-        try:
-            import pytesseract
-            from PIL import Image
-            
-            img = Image.open(file_path)
-            return pytesseract.image_to_string(img)
-        except ImportError:
-            return "OCR requires pytesseract and Pillow packages."
+    elif ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']:
+        return f"Image text extraction is coming soon. Upload a text file (.txt) for now."
     
     # Unsupported file type
     else:
-        return f"Unsupported file type: {ext}"
+        return f"Unsupported file type: {ext}. Try uploading a text file (.txt)."

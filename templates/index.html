@@ -106,64 +106,64 @@
                 </div>
                 
                 <!-- File Upload Container -->
-                <div class="input-container" id="file-input-container" style="display:none;">
-                    <p>Upload files to generate flashcards:</p>
+    <div class="input-container" id="file-input-container" style="display:none;">
+        <p>Upload files to generate flashcards:</p>
+        
+        <form id="file-form" enctype="multipart/form-data">
+            <div class="file-upload-zone" id="file-upload-zone">
+                <div class="upload-icon">📁</div>
+                <p>Drag & drop files here or click to browse</p>
+                <p class="small">Supports TXT files (PDF and DOCX coming soon)</p>
+                <input type="file" id="file-input" name="files" multiple style="display: none;" />
+            </div>
+            
+            <div id="file-list"></div>
+            
+            <div class="advanced-options">
+                <h3>Card Generation Options</h3>
+                <div class="options-grid">
+                    <div class="option-item">
+                        <input type="checkbox" id="file-extract-all" name="file_extract_all" checked>
+                        <label for="file-extract-all">Extract All Content</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="file-ocr" name="file_ocr">
+                        <label for="file-ocr">Use OCR for Images</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button type="submit" id="file-generate-btn">Generate From Files</button>
+            </div>
+        </form>
+    </div>
+                </section>
+                
+                <section class="loading-section" id="loading-section" style="display: none;">
+                    <div class="loader"></div>
+                    <p>Generating your flashcards... This may take a moment.</p>
+                </section>
+                
+                <section class="results-section" id="results-section" style="display: none;">
+                    <h2>Your Flashcards</h2>
                     
-                    <form id="file-form" enctype="multipart/form-data">
-                        <div class="file-upload-zone" id="file-upload-zone">
-                            <div class="upload-icon">📁</div>
-                            <p>Drag & drop files here or click to browse</p>
-                            <p class="small">Supports PDF, DOCX, TXT, and images</p>
-                            <input type="file" id="file-input" name="file_input" multiple style="display: none;" />
-                        </div>
-                        
-                        <div id="file-list"></div>
-                        
-                        <div class="advanced-options">
-                            <h3>Card Generation Options</h3>
-                            <div class="options-grid">
-                                <div class="option-item">
-                                    <input type="checkbox" id="file-extract-all" name="file_extract_all" checked>
-                                    <label for="file-extract-all">Extract All Content</label>
-                                </div>
-                                <div class="option-item">
-                                    <input type="checkbox" id="file-ocr" name="file_ocr">
-                                    <label for="file-ocr">Use OCR for Images</label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="controls">
-                            <button type="submit" id="file-generate-btn">Generate From Files</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-            
-            <section class="loading-section" id="loading-section" style="display: none;">
-                <div class="loader"></div>
-                <p>Generating your flashcards... This may take a moment.</p>
-            </section>
-            
-            <section class="results-section" id="results-section" style="display: none;">
-                <h2>Your Flashcards</h2>
-                
-                <div class="tab-navigation" id="deck-tabs">
-                    <div class="tab-item active" data-deck="main">Main Deck</div>
-                    <div class="tab-item" data-deck="definitions">Definitions</div>
-                    <div class="tab-item" data-deck="cloze">Fill-in-Blanks</div>
-                </div>
-                
-                <div class="flashcard-container" id="flashcard-container">
-                    <!-- Flashcards will be inserted here -->
-                </div>
-                
-                <div class="controls">
-                    <button id="edit-btn">Edit Cards</button>
-                    <button id="save-btn">Save Deck</button>
-                    <button id="start-study-btn">Study Now</button>
-                </div>
-            </section>
+                    <div class="tab-navigation" id="deck-tabs">
+                        <div class="tab-item active" data-deck="main">Main Deck</div>
+                        <div class="tab-item" data-deck="definitions">Definitions</div>
+                        <div class="tab-item" data-deck="cloze">Fill-in-Blanks</div>
+                    </div>
+                    
+                    <div class="flashcard-container" id="flashcard-container">
+                        <!-- Flashcards will be inserted here -->
+                    </div>
+                    
+                    <div class="controls">
+                        <button id="edit-btn">Edit Cards</button>
+                        <button id="save-btn">Save Deck</button>
+                        <button id="start-study-btn">Study Now</button>
+                    </div>
+                </section>
         </main>
         
         <footer>

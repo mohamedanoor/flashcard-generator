@@ -104,19 +104,39 @@ def generate_from_topic():
 
 @app.route('/generate_from_files', methods=['POST'])
 def generate_from_files():
-    # Simplified file handler for now
-    return jsonify({
-        'flashcards': {
-            'main': [
-                {"question": "File upload feature", 
-                 "answer": "This feature is coming soon! We're working on it."}
-            ]
-        },
-        'main': [
-            {"question": "File upload feature", 
-             "answer": "This feature is coming soon! We're working on it."}
-        ]
-    })
+    try:
+        # Get files from the request
+        files = request.files.getlist('files')
+        difficulty = request.form.get('difficulty', 'easy')
+        
+        # Get options (converting string 'true'/'false' to actual booleans)
+        extract_all = request.form.get('extract_all') == 'true'
+        use_ocr = request.form.get('use_ocr') == 'true'
+        
+        if not files or len(files) == 0:
+            return jsonify({'error': 'No files provided'}), 400
+        
+        # Process files
+        flashcards = process_files(
+            files,
+            difficulty=difficulty,
+            extract_all=extract_all,
+            use_ocr=use_ocr
+        )
+        
+        # Force garbage collection to free memory
+        import gc
+        gc.collect()
+        
+        return jsonify({
+            'flashcards': flashcards,
+            'main': flashcards.get('main', []),
+            'definitions': flashcards.get('definitions', []),
+            'cloze': flashcards.get('cloze', [])
+        })
+    except Exception as e:
+        print(f"Error in file processing route: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/flashcards')
 def flashcards():
