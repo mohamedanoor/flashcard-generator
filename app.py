@@ -7,6 +7,10 @@ from flask import Flask, render_template, request, jsonify
 from flashcard_ai.text_processor import process_text
 from flashcard_ai.flashcard_generator import generate_flashcards
 from flashcard_ai.topic_generator import generate_topic_flashcards
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -30,14 +34,14 @@ def generate():
         if not text_input:
             return jsonify({'error': 'No text provided'}), 400
         
-        # Limit input size to save memory
-        if len(text_input) > 3000:
-            text_input = text_input[:3000]
+        # Limit input size to save on tokens
+        if len(text_input) > 4000:
+            text_input = text_input[:4000]
         
         # Process the text
         processed_text = process_text(text_input, format_type)
         
-        # Generate flashcards
+        # Generate flashcards using OpenAI
         flashcards = generate_flashcards(
             processed_text, 
             difficulty=difficulty,
@@ -75,7 +79,7 @@ def generate_from_topic():
         if not topic_input:
             return jsonify({'error': 'No topic provided'}), 400
         
-        # Generate flashcards from the topic
+        # Generate flashcards from the topic using OpenAI
         flashcards = generate_topic_flashcards(
             topic_input,
             difficulty=difficulty,

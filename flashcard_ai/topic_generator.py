@@ -1,8 +1,16 @@
 import requests
 import re
 from bs4 import BeautifulSoup
-from flashcard_ai.text_processor import process_text
-from flashcard_ai.flashcard_generator import generate_flashcards
+import os
+import openai
+import json
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Configure OpenAI
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def search_topic(topic, num_results=2):
     """
@@ -88,9 +96,9 @@ def search_topic(topic, num_results=2):
         if len(combined_text) < 500:
             combined_text += f"\n\n{topic} is an important subject that has various key aspects worth studying. Understanding {topic} requires examining its main components and historical context."
         
-        # Limit text length to avoid memory issues
-        if len(combined_text) > 2000:
-            combined_text = combined_text[:2000]
+        # Limit text length to avoid excessive tokens
+        if len(combined_text) > 4000:
+            combined_text = combined_text[:4000]
             
         return combined_text
         
@@ -100,7 +108,7 @@ def search_topic(topic, num_results=2):
 
 def generate_topic_flashcards(topic, difficulty='easy', include_definitions=True, include_facts=True, include_dates=False):
     """
-    Generate flashcards for a specific topic
+    Generate flashcards for a specific topic using OpenAI
     
     Args:
         topic (str): The topic to generate flashcards for
@@ -113,32 +121,94 @@ def generate_topic_flashcards(topic, difficulty='easy', include_definitions=True
         dict: Dictionary containing different types of flashcards
     """
     try:
-        # Search for information about the topic
-        topic_text = search_topic(topic, num_results=2)  # Limit to 2 results to save memory
+        # Skip scraping if user just wants AI-generated content
+        if include_facts:
+            # Search for information about the topic
+            topic_text = search_topic(topic, num_results=2)
+        else:
+            # Just use the topic name for pure AI generation
+            topic_text = f"Generate flashcards about {topic}."
         
-        # Process the text
-        processed_text = process_text(topic_text)
+        # Determine number of cards based on difficulty
+        if difficulty == 'easy':
+            num_cards = 5
+        elif difficulty == 'medium':
+            num_cards = 8
+        else:  # hard
+            num_cards = 10
         
-        # Generate flashcards using the existing generator
-        flashcards = generate_flashcards(
-            processed_text, 
-            difficulty=difficulty,
-            extract_definitions=include_definitions,
-            create_cloze=include_facts,
-            question_answer=True
+        # Create flashcard types
+        card_types = []
+        if include_facts:
+            card_types.append("fact-based question-answer pairs")
+        if include_definitions:
+            card_types.append("key term definitions")
+        if include_dates:
+            card_types.append("important dates and timeline events")
+        
+        # Default if nothing is selected
+        if not card_types:
+            card_types = ["general knowledge question-answer pairs"]
+        
+        # Create the prompt
+        system_prompt = """
+        You are an expert educator who creates high-quality flashcards about specific topics.
+        Your goal is to create effective study materials that help users learn important concepts.
+        """
+        
+        user_prompt = f"""
+        Please create {num_cards} flashcards about the topic: {topic}
+        Difficulty level: {difficulty}
+        
+        Include these card types: {', '.join(card_types)}.
+        
+        Format your response as a JSON object with these keys:
+        - "main": A list of question-answer flashcards with "question" and "answer" keys
+        - "definitions": A list of term definition flashcards (if requested)
+        - "cloze": A list of fill-in-the-blank flashcards (if requested)
+        
+        Each list should contain objects with "question" and "answer" keys.
+        Make the content concise, clear, and focused on the most important concepts.
+        
+        Use this information if relevant:
+        {topic_text}
+        """
+        
+        # Call the OpenAI API
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # You can use "gpt-4" for higher quality but higher cost
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=2000,
+            top_p=1.0,
+            frequency_penalty=0.0,
+            presence_penalty=0.0
         )
         
-        # Add topic context to beginning of the list
-        if "main" in flashcards and isinstance(flashcards["main"], list):
-            flashcards["main"].insert(0, {
-                "question": f"What is the main focus of {topic}?",
-                "answer": f"These flashcards cover key information about {topic}."
-            })
-        else:
-            flashcards["main"] = [{
-                "question": f"What is {topic}?", 
-                "answer": f"These flashcards cover key information about {topic}."
-            }]
+        # Extract and parse the content
+        content = response.choices[0].message.content
+        
+        # Clean up the response to ensure it's valid JSON
+        content = content.strip()
+        if content.startswith("```json"):
+            content = content[7:]
+        if content.endswith("```"):
+            content = content[:-3]
+        content = content.strip()
+        
+        # Parse the JSON
+        flashcards = json.loads(content)
+        
+        # Ensure all required sections exist
+        if "main" not in flashcards:
+            flashcards["main"] = []
+        if include_definitions and "definitions" not in flashcards:
+            flashcards["definitions"] = []
+        if include_dates and "dates" not in flashcards:
+            flashcards["dates"] = []
         
         return flashcards
         
