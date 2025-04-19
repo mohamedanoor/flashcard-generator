@@ -616,7 +616,6 @@ function setupStudyPage() {
             quizOptions = document.createElement('div');
             quizOptions.className = 'quiz-options';
             quizOptions.style.display = 'none';
-            quizOptions.style.marginTop = '20px';
             
             // Add after the study card
             studyCard.parentNode.insertBefore(quizOptions, studyCard.nextSibling);
@@ -636,11 +635,6 @@ function setupStudyPage() {
             answerInput.type = 'text';
             answerInput.className = 'written-answer-input';
             answerInput.placeholder = 'Type your answer here...';
-            answerInput.style.width = '100%';
-            answerInput.style.padding = '10px';
-            answerInput.style.marginBottom = '10px';
-            answerInput.style.borderRadius = '8px';
-            answerInput.style.border = '1px solid #e0e0e0';
             
             checkAnswerBtn = document.createElement('button');
             checkAnswerBtn.textContent = 'Check Answer';
@@ -677,6 +671,7 @@ function setupStudyPage() {
         
         quizOptions.innerHTML = '';
         quizOptions.style.display = 'block';
+        quizOptions.className = 'quiz-options';
         
         const correctAnswer = flashcards[currentCardIndex].answer;
         
@@ -692,7 +687,7 @@ function setupStudyPage() {
         
         // If we don't have enough options, add some generic wrong answers
         while (options.length < 4) {
-            options.push(`Incorrect option ${options.length}`);
+            options.push(`Another possible answer ${options.length}`);
         }
         
         // Shuffle the options
@@ -700,46 +695,39 @@ function setupStudyPage() {
         
         // Create option buttons
         options.forEach(option => {
-            const optionBtn = document.createElement('button');
-            optionBtn.textContent = option;
-            optionBtn.style.display = 'block';
-            optionBtn.style.width = '100%';
-            optionBtn.style.marginBottom = '10px';
-            optionBtn.style.textAlign = 'left';
-            optionBtn.style.padding = '10px';
-            optionBtn.style.borderRadius = '8px';
-            optionBtn.style.border = 'none';
-            optionBtn.style.backgroundColor = '#f0f0f0';
-            optionBtn.style.cursor = 'pointer';
+            const optionElement = document.createElement('div');
+            optionElement.className = 'quiz-option';
+            optionElement.textContent = option;
             
             // Check if the option is correct
-            optionBtn.addEventListener('click', function() {
+            optionElement.addEventListener('click', function() {
+                if (optionElement.classList.contains('disabled')) return;
+                
                 const isCorrect = option === correctAnswer;
+                
+                // Mark this option as selected
+                optionElement.classList.add('selected');
                 
                 // Style based on correctness
                 if (isCorrect) {
-                    optionBtn.style.backgroundColor = '#2ecc71';
-                    optionBtn.style.color = 'white';
+                    optionElement.classList.add('correct');
                     studyStats.correct++;
                 } else {
-                    optionBtn.style.backgroundColor = '#e74c3c';
-                    optionBtn.style.color = 'white';
+                    optionElement.classList.add('incorrect');
                     
                     // Highlight the correct answer
-                    const buttons = quizOptions.querySelectorAll('button');
-                    buttons.forEach(btn => {
-                        if (btn.textContent === correctAnswer) {
-                            btn.style.backgroundColor = '#2ecc71';
-                            btn.style.color = 'white';
+                    const options = quizOptions.querySelectorAll('.quiz-option');
+                    options.forEach(opt => {
+                        if (opt.textContent === correctAnswer) {
+                            opt.classList.add('correct');
                         }
                     });
                 }
                 
                 // Disable all options after selection
-                const buttons = quizOptions.querySelectorAll('button');
-                buttons.forEach(btn => {
-                    btn.disabled = true;
-                    btn.style.cursor = 'default';
+                const options = quizOptions.querySelectorAll('.quiz-option');
+                options.forEach(opt => {
+                    opt.classList.add('disabled');
                 });
                 
                 // Show next button
@@ -750,7 +738,7 @@ function setupStudyPage() {
                 updateStudyStats();
             });
             
-            quizOptions.appendChild(optionBtn);
+            quizOptions.appendChild(optionElement);
         });
     }
     
