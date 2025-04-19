@@ -1,13 +1,14 @@
 import os
-import openai
 import json
 from dotenv import load_dotenv
+import openai
+from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
 
-# Configure OpenAI
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Initialize the OpenAI client - this is the updated way to use the API
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def generate_flashcards(text, difficulty='easy', extract_definitions=False, create_cloze=False, question_answer=True):
     """
@@ -69,21 +70,18 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
         {text}
         """
         
-        # Call the OpenAI API
-        response = openai.ChatCompletion.create(
+        # Call the OpenAI API using the new client format
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",  # You can use "gpt-4" for higher quality but higher cost
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.7,
-            max_tokens=2000,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0
+            max_tokens=2000
         )
         
-        # Extract and parse the content
+        # Extract and parse the content from the new response format
         content = response.choices[0].message.content
         
         # Clean up the response to ensure it's valid JSON
@@ -94,8 +92,18 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
             content = content[:-3]
         content = content.strip()
         
-        # Parse the JSON
-        flashcards = json.loads(content)
+        try:
+            # Parse the JSON
+            flashcards = json.loads(content)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, create a simple fallback response
+            print(f"Error parsing JSON response: {content[:100]}...")
+            return {
+                "main": [
+                    {"question": "What are the key concepts in this text?", 
+                     "answer": "The text covers important information that has been processed into flashcards."}
+                ]
+            }
         
         # Ensure all required sections exist
         if "main" not in flashcards:

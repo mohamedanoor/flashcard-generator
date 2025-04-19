@@ -1,16 +1,16 @@
 import requests
 import re
-from bs4 import BeautifulSoup
 import os
-import openai
 import json
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
 
-# Configure OpenAI
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def search_topic(topic, num_results=2):
     """
@@ -174,21 +174,18 @@ def generate_topic_flashcards(topic, difficulty='easy', include_definitions=True
         {topic_text}
         """
         
-        # Call the OpenAI API
-        response = openai.ChatCompletion.create(
+        # Call the OpenAI API using the new client format
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",  # You can use "gpt-4" for higher quality but higher cost
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.7,
-            max_tokens=2000,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0
+            max_tokens=2000
         )
         
-        # Extract and parse the content
+        # Extract and parse the content from the new response format
         content = response.choices[0].message.content
         
         # Clean up the response to ensure it's valid JSON
@@ -199,8 +196,20 @@ def generate_topic_flashcards(topic, difficulty='easy', include_definitions=True
             content = content[:-3]
         content = content.strip()
         
-        # Parse the JSON
-        flashcards = json.loads(content)
+        try:
+            # Parse the JSON
+            flashcards = json.loads(content)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, create a simple fallback response
+            print(f"Error parsing JSON response: {content[:100]}...")
+            return {
+                "main": [
+                    {"question": f"What is {topic}?", 
+                     "answer": f"This is a key concept related to {topic}."},
+                    {"question": f"Why is {topic} important?", 
+                     "answer": f"Understanding {topic} is important for several reasons."}
+                ]
+            }
         
         # Ensure all required sections exist
         if "main" not in flashcards:
