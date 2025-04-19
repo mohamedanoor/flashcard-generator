@@ -28,9 +28,9 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
         if difficulty == 'easy':
             num_cards = 5
         elif difficulty == 'medium':
-            num_cards = 8
-        else:  # hard
             num_cards = 10
+        else:  # hard
+            num_cards = 15
         
         # Prepare detailed instructions for each card type
         instructions = []
