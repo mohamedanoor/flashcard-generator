@@ -16,7 +16,7 @@ def initialize_models():
     if summarizer is None:
         # Use a smaller model for summarization
         print("Loading summarization model...")
-        summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-6-6")
+        summarizer = pipeline("summarization", model="facebook/bart-large-xsum-samsum", max_length=100)
     
     if qa_model is None:
         # Question answering model - only load when needed
@@ -109,7 +109,7 @@ def create_cloze_deletions(text):
     
     for sentence in sentences:
         # Only process substantial sentences (min 6 words)
-        if len(sentence.split()) >= 6:  # Fixed: Changed undefined 'a' to '6'
+        if len(sentence.split()) >= 6:
             # Find important words (nouns, technical terms)
             words = sentence.split()
             

@@ -7,12 +7,8 @@ from flask import Flask, render_template, request, jsonify
 from flashcard_ai.text_processor import process_text
 from flashcard_ai.flashcard_generator import generate_flashcards
 from flashcard_ai.topic_generator import generate_topic_flashcards
-from flashcard_ai.file_processor import process_files
 
 app = Flask(__name__)
-
-# Increase upload limit for files
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 
 @app.route('/')
 def index():
@@ -29,14 +25,14 @@ def generate():
         # Get advanced options
         extract_definitions = request.form.get('extract_definitions') == 'true'
         create_cloze = request.form.get('create_cloze') == 'true'
-        question_answer = request.form.get('question_answer') == 'true'
+        question_answer = request.form.get('question_answer', 'true') == 'true'  # Default to True
         
         if not text_input:
             return jsonify({'error': 'No text provided'}), 400
         
-        # Limit input size
-        if len(text_input) > 8000:
-            text_input = text_input[:8000]
+        # Limit input size to save memory
+        if len(text_input) > 3000:
+            text_input = text_input[:3000]
         
         # Process the text
         processed_text = process_text(text_input, format_type)
@@ -61,6 +57,7 @@ def generate():
         })
     except Exception as e:
         print(f"Error in generate route: {str(e)}")
+        gc.collect()  # Force garbage collection on error
         return jsonify({'error': str(e)}), 500
 
 @app.route('/generate_from_topic', methods=['POST'])
@@ -98,42 +95,24 @@ def generate_from_topic():
         })
     except Exception as e:
         print(f"Error in topic generation route: {str(e)}")
+        gc.collect()  # Force garbage collection on error
         return jsonify({'error': str(e)}), 500
 
 @app.route('/generate_from_files', methods=['POST'])
 def generate_from_files():
-    try:
-        # Get files from the request
-        files = request.files.getlist('files')
-        difficulty = request.form.get('difficulty', 'easy')
-        
-        # Get advanced options
-        extract_all = request.form.get('extract_all') == 'true'
-        use_ocr = request.form.get('use_ocr') == 'true'
-        
-        if not files or len(files) == 0:
-            return jsonify({'error': 'No files provided'}), 400
-        
-        # Process files
-        flashcards = process_files(
-            files,
-            difficulty=difficulty,
-            extract_all=extract_all,
-            use_ocr=use_ocr
-        )
-        
-        # Force garbage collection to free memory
-        gc.collect()
-        
-        return jsonify({
-            'flashcards': flashcards,
-            'main': flashcards.get('main', []),
-            'definitions': flashcards.get('definitions', []),
-            'cloze': flashcards.get('cloze', [])
-        })
-    except Exception as e:
-        print(f"Error in file processing route: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+    # Simplified file handler for now
+    return jsonify({
+        'flashcards': {
+            'main': [
+                {"question": "File upload feature", 
+                 "answer": "This feature is coming soon! We're working on it."}
+            ]
+        },
+        'main': [
+            {"question": "File upload feature", 
+             "answer": "This feature is coming soon! We're working on it."}
+        ]
+    })
 
 @app.route('/flashcards')
 def flashcards():
