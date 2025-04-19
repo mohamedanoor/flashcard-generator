@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Flashcards - AI Flashcard Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Study Your Flashcards</h1>
+            <a href="/" class="back-btn">Back to Generator</a>
+        </header>
+        
+        <main>
+            <section class="study-section">
+                <div class="flashcard-study" id="study-card">
+                    <div class="flashcard-inner">
+                        <div class="flashcard-front">
+                            <p id="question-text">Click "Start" to begin studying</p>
+                        </div>
+                        <div class="flashcard-back">
+                            <p id="answer-text"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="study-controls">
+                    <button id="start-btn">Start</button>
+                    <button id="flip-btn" disabled>Flip Card</button>
+                    <button id="next-btn" disabled>Next Card</button>
+                    <span id="progress-text">0/0</span>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>AI Flashcard Generator &copy; 2025 • Made with ♥ for better learning</p>
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
