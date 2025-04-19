@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Flashcard Generator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💡</text></svg>">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=2">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>AI Flashcard Generator</h1>
-            <p>Turn any text or topic into effective study tools in seconds</p>
+            <p>Transform any content into effective study cards with AI assistance</p>
         </header>
         
         <main>
@@ -22,13 +22,45 @@
                 <div class="input-selector">
                     <button class="selector-btn active" id="text-selector">From Text</button>
                     <button class="selector-btn" id="topic-selector">From Topic</button>
+                    <button class="selector-btn" id="file-selector">From Files</button>
                 </div>
                 
+                <!-- Text Input Container -->
                 <div class="input-container" id="text-input-container">
+                    <div class="format-selector">
+                        <span class="format-option active" data-format="plain">Plain Text</span>
+                        <span class="format-option" data-format="markdown">Markdown</span>
+                        <span class="format-option" data-format="url">Web URL</span>
+                    </div>
+                    
                     <p>Paste your lecture notes, textbook passages, or any text you want to transform:</p>
                     
                     <form id="flashcard-form">
                         <textarea id="text-input" name="text_input" placeholder="Paste your text here..."></textarea>
+                        
+                        <div class="advanced-options">
+                            <h3>Advanced Options</h3>
+                            <div class="options-grid">
+                                <div class="option-item">
+                                    <input type="checkbox" id="extract-definitions" name="extract_definitions">
+                                    <label for="extract-definitions">Extract Definitions</label>
+                                </div>
+                                <div class="option-item">
+                                    <input type="checkbox" id="create-cloze" name="create_cloze">
+                                    <label for="create-cloze">Create Fill-in-Blanks</label>
+                                </div>
+                                <div class="option-item">
+                                    <input type="checkbox" id="question-answer" name="question_answer" checked>
+                                    <label for="question-answer">Question-Answer Pairs</label>
+                                </div>
+                            </div>
+                            
+                            <div class="difficulty-selector">
+                                <div class="difficulty-option active" data-level="easy">Easy</div>
+                                <div class="difficulty-option" data-level="medium">Medium</div>
+                                <div class="difficulty-option" data-level="hard">Hard</div>
+                            </div>
+                        </div>
                         
                         <div class="controls">
                             <button type="submit" id="generate-btn">Generate Flashcards</button>
@@ -36,14 +68,73 @@
                     </form>
                 </div>
                 
+                <!-- Topic Input Container -->
                 <div class="input-container" id="topic-input-container" style="display:none;">
                     <p>Enter a topic and we'll create flashcards about it:</p>
                     
                     <form id="topic-form">
                         <input type="text" id="topic-input" name="topic_input" placeholder="e.g., US History, Photosynthesis, World War II..." />
                         
+                        <div class="advanced-options">
+                            <h3>Advanced Options</h3>
+                            <div class="options-grid">
+                                <div class="option-item">
+                                    <input type="checkbox" id="topic-definitions" name="topic_definitions" checked>
+                                    <label for="topic-definitions">Include Definitions</label>
+                                </div>
+                                <div class="option-item">
+                                    <input type="checkbox" id="topic-facts" name="topic_facts" checked>
+                                    <label for="topic-facts">Include Key Facts</label>
+                                </div>
+                                <div class="option-item">
+                                    <input type="checkbox" id="topic-dates" name="topic_dates">
+                                    <label for="topic-dates">Include Dates/Timeline</label>
+                                </div>
+                            </div>
+                            
+                            <div class="difficulty-selector">
+                                <div class="difficulty-option active" data-level="easy">Basic</div>
+                                <div class="difficulty-option" data-level="medium">Intermediate</div>
+                                <div class="difficulty-option" data-level="hard">Advanced</div>
+                            </div>
+                        </div>
+                        
                         <div class="controls">
                             <button type="submit" id="topic-generate-btn">Generate Topic Flashcards</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- File Upload Container -->
+                <div class="input-container" id="file-input-container" style="display:none;">
+                    <p>Upload files to generate flashcards:</p>
+                    
+                    <form id="file-form" enctype="multipart/form-data">
+                        <div class="file-upload-zone" id="file-upload-zone">
+                            <div class="upload-icon">📁</div>
+                            <p>Drag & drop files here or click to browse</p>
+                            <p class="small">Supports PDF, DOCX, TXT, and images</p>
+                            <input type="file" id="file-input" name="file_input" multiple style="display: none;" />
+                        </div>
+                        
+                        <div id="file-list"></div>
+                        
+                        <div class="advanced-options">
+                            <h3>Card Generation Options</h3>
+                            <div class="options-grid">
+                                <div class="option-item">
+                                    <input type="checkbox" id="file-extract-all" name="file_extract_all" checked>
+                                    <label for="file-extract-all">Extract All Content</label>
+                                </div>
+                                <div class="option-item">
+                                    <input type="checkbox" id="file-ocr" name="file_ocr">
+                                    <label for="file-ocr">Use OCR for Images</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="controls">
+                            <button type="submit" id="file-generate-btn">Generate From Files</button>
                         </div>
                     </form>
                 </div>
@@ -56,22 +147,30 @@
             
             <section class="results-section" id="results-section" style="display: none;">
                 <h2>Your Flashcards</h2>
+                
+                <div class="tab-navigation" id="deck-tabs">
+                    <div class="tab-item active" data-deck="main">Main Deck</div>
+                    <div class="tab-item" data-deck="definitions">Definitions</div>
+                    <div class="tab-item" data-deck="cloze">Fill-in-Blanks</div>
+                </div>
+                
                 <div class="flashcard-container" id="flashcard-container">
                     <!-- Flashcards will be inserted here -->
                 </div>
                 
                 <div class="controls">
-                    <button id="save-btn">Save Flashcards</button>
-                    <button id="start-study-btn">Start Studying</button>
+                    <button id="edit-btn">Edit Cards</button>
+                    <button id="save-btn">Save Deck</button>
+                    <button id="start-study-btn">Study Now</button>
                 </div>
             </section>
         </main>
         
         <footer>
-            <p>AI Flashcard Generator &copy; 2025 • Click any card to flip it • Made for better learning</p>
+            <p>AI Flashcard Generator &copy; 2025 • Click any card to flip it • Powered by ML</p>
         </footer>
     </div>
     
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=2"></script>
 </body>
 </html>

@@ -11,38 +11,161 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function setupHomePage() {
-    const form = document.getElementById('flashcard-form');
+    // Form elements
+    const textForm = document.getElementById('flashcard-form');
     const topicForm = document.getElementById('topic-form');
+    const fileForm = document.getElementById('file-form');
+    
+    // Tab selectors
     const textSelector = document.getElementById('text-selector');
     const topicSelector = document.getElementById('topic-selector');
+    const fileSelector = document.getElementById('file-selector');
+    
+    // Input containers
     const textInputContainer = document.getElementById('text-input-container');
     const topicInputContainer = document.getElementById('topic-input-container');
+    const fileInputContainer = document.getElementById('file-input-container');
+    
+    // Results elements
     const loadingSection = document.getElementById('loading-section');
     const resultsSection = document.getElementById('results-section');
     const flashcardContainer = document.getElementById('flashcard-container');
+    
+    // Button elements
     const saveBtn = document.getElementById('save-btn');
     const startStudyBtn = document.getElementById('start-study-btn');
+    const editBtn = document.getElementById('edit-btn');
+    
+    // Deck tabs
+    const deckTabs = document.getElementById('deck-tabs').querySelectorAll('.tab-item');
+    
+    // Format options
+    const formatOptions = document.querySelectorAll('.format-option');
+    
+    // Difficulty options
+    const difficultyOptions = document.querySelectorAll('.difficulty-option');
+    
+    // File upload zone
+    const fileUploadZone = document.getElementById('file-upload-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileList = document.getElementById('file-list');
     
     // Store generated flashcards
     let currentFlashcards = [];
+    let currentFormat = 'plain';
+    let currentDifficulty = 'easy';
+    let uploadedFiles = [];
     
-    // Toggle between text and topic input
+    // Toggle between input types
     textSelector.addEventListener('click', function() {
-        textSelector.classList.add('active');
-        topicSelector.classList.remove('active');
-        textInputContainer.style.display = 'block';
-        topicInputContainer.style.display = 'none';
+        setActiveTab(textSelector, [topicSelector, fileSelector]);
+        showContainer(textInputContainer, [topicInputContainer, fileInputContainer]);
     });
     
     topicSelector.addEventListener('click', function() {
-        topicSelector.classList.add('active');
-        textSelector.classList.remove('active');
-        topicInputContainer.style.display = 'block';
-        textInputContainer.style.display = 'none';
+        setActiveTab(topicSelector, [textSelector, fileSelector]);
+        showContainer(topicInputContainer, [textInputContainer, fileInputContainer]);
     });
     
-    // Text form submission handler
-    form.addEventListener('submit', function(e) {
+    fileSelector.addEventListener('click', function() {
+        setActiveTab(fileSelector, [textSelector, topicSelector]);
+        showContainer(fileInputContainer, [textInputContainer, topicInputContainer]);
+    });
+    
+    // Toggle format options
+    formatOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            formatOptions.forEach(opt => opt.classList.remove('active'));
+            this.classList.add('active');
+            currentFormat = this.getAttribute('data-format');
+            
+            // Change placeholder based on format
+            const textInput = document.getElementById('text-input');
+            if (currentFormat === 'plain') {
+                textInput.placeholder = 'Paste your text here...';
+            } else if (currentFormat === 'markdown') {
+                textInput.placeholder = 'Paste markdown content here...';
+            } else if (currentFormat === 'url') {
+                textInput.placeholder = 'Enter a URL (e.g., https://example.com/article)';
+            }
+        });
+    });
+    
+    // Toggle difficulty options
+    difficultyOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const parent = this.parentElement;
+            parent.querySelectorAll('.difficulty-option').forEach(opt => opt.classList.remove('active'));
+            this.classList.add('active');
+            currentDifficulty = this.getAttribute('data-level');
+        });
+    });
+    
+    // File upload functionality
+    fileUploadZone.addEventListener('click', function() {
+        fileInput.click();
+    });
+    
+    fileUploadZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#9b59b6';
+        this.style.backgroundColor = 'rgba(142, 68, 173, 0.1)';
+    });
+    
+    fileUploadZone.addEventListener('dragleave', function() {
+        this.style.borderColor = '';
+        this.style.backgroundColor = '';
+    });
+    
+    fileUploadZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '';
+        this.style.backgroundColor = '';
+        
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+    
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+    
+    function handleFiles(files) {
+        uploadedFiles = Array.from(files);
+        
+        // Clear previous file list
+        fileList.innerHTML = '';
+        
+        // Display file list
+        uploadedFiles.forEach(file => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.innerHTML = `
+                <span>${file.name}</span>
+                <span class="file-size">(${formatFileSize(file.size)})</span>
+                <button class="remove-file" data-name="${file.name}">×</button>
+            `;
+            fileList.appendChild(fileItem);
+        });
+        
+        // Add event listeners to remove buttons
+        document.querySelectorAll('.remove-file').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const fileName = this.getAttribute('data-name');
+                uploadedFiles = uploadedFiles.filter(file => file.name !== fileName);
+                this.parentElement.remove();
+            });
+        });
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' bytes';
+        else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        else return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+    
+    // Text form submission
+    textForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
         const textInput = document.getElementById('text-input').value.trim();
@@ -52,6 +175,11 @@ function setupHomePage() {
             return;
         }
         
+        // Get options
+        const extractDefinitions = document.getElementById('extract-definitions').checked;
+        const createCloze = document.getElementById('create-cloze').checked;
+        const questionAnswer = document.getElementById('question-answer').checked;
+        
         // Show loading spinner
         loadingSection.style.display = 'block';
         resultsSection.style.display = 'none';
@@ -59,6 +187,11 @@ function setupHomePage() {
         // Send text to server for processing
         const formData = new FormData();
         formData.append('text_input', textInput);
+        formData.append('format', currentFormat);
+        formData.append('difficulty', currentDifficulty);
+        formData.append('extract_definitions', extractDefinitions);
+        formData.append('create_cloze', createCloze);
+        formData.append('question_answer', questionAnswer);
         
         fetch('/generate', {
             method: 'POST',
@@ -80,13 +213,16 @@ function setupHomePage() {
             }
             
             // Store the flashcards
-            currentFlashcards = data.flashcards;
+            currentFlashcards = data.flashcards || [];
             
             // Display flashcards
             displayFlashcards(currentFlashcards);
             
             // Show results section
             resultsSection.style.display = 'block';
+            
+            // Set up deck tabs
+            setupDeckTabs(data);
         })
         .catch(error => {
             loadingSection.style.display = 'none';
@@ -94,7 +230,7 @@ function setupHomePage() {
         });
     });
     
-    // Topic form submission handler
+    // Topic form submission
     topicForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -105,6 +241,11 @@ function setupHomePage() {
             return;
         }
         
+        // Get options
+        const includeDefinitions = document.getElementById('topic-definitions').checked;
+        const includeFacts = document.getElementById('topic-facts').checked;
+        const includeDates = document.getElementById('topic-dates').checked;
+        
         // Show loading spinner
         loadingSection.style.display = 'block';
         resultsSection.style.display = 'none';
@@ -112,6 +253,10 @@ function setupHomePage() {
         // Send topic to server for processing
         const formData = new FormData();
         formData.append('topic_input', topicInput);
+        formData.append('difficulty', currentDifficulty);
+        formData.append('include_definitions', includeDefinitions);
+        formData.append('include_facts', includeFacts);
+        formData.append('include_dates', includeDates);
         
         fetch('/generate_from_topic', {
             method: 'POST',
@@ -133,13 +278,16 @@ function setupHomePage() {
             }
             
             // Store the flashcards
-            currentFlashcards = data.flashcards;
+            currentFlashcards = data.flashcards || [];
             
             // Display flashcards
             displayFlashcards(currentFlashcards);
             
             // Show results section
             resultsSection.style.display = 'block';
+            
+            // Set up deck tabs
+            setupDeckTabs(data);
         })
         .catch(error => {
             loadingSection.style.display = 'none';
@@ -147,20 +295,138 @@ function setupHomePage() {
         });
     });
     
+    // File form submission
+    fileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (uploadedFiles.length === 0) {
+            alert('Please upload at least one file.');
+            return;
+        }
+        
+        // Get options
+        const extractAll = document.getElementById('file-extract-all').checked;
+        const useOcr = document.getElementById('file-ocr').checked;
+        
+        // Show loading spinner
+        loadingSection.style.display = 'block';
+        resultsSection.style.display = 'none';
+        
+        // Send files to server for processing
+        const formData = new FormData();
+        uploadedFiles.forEach(file => {
+            formData.append('files', file);
+        });
+        formData.append('extract_all', extractAll);
+        formData.append('use_ocr', useOcr);
+        formData.append('difficulty', currentDifficulty);
+        
+        fetch('/generate_from_files', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Server error');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Hide loading spinner
+            loadingSection.style.display = 'none';
+            
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            
+            // Store the flashcards
+            currentFlashcards = data.flashcards || [];
+            
+            // Display flashcards
+            displayFlashcards(currentFlashcards);
+            
+            // Show results section
+            resultsSection.style.display = 'block';
+            
+            // Set up deck tabs
+            setupDeckTabs(data);
+        })
+        .catch(error => {
+            loadingSection.style.display = 'none';
+            alert('Error generating flashcards: ' + error.message);
+        });
+    });
+    
+    // Setup deck tabs
+    function setupDeckTabs(data) {
+        // Show/hide tabs based on available data
+        deckTabs.forEach(tab => {
+            const deckType = tab.getAttribute('data-deck');
+            if (data[deckType] && data[deckType].length > 0) {
+                tab.style.display = 'block';
+            } else {
+                tab.style.display = 'none';
+            }
+        });
+        
+        // Set first visible tab as active
+        const visibleTabs = Array.from(deckTabs).filter(tab => tab.style.display !== 'none');
+        if (visibleTabs.length > 0) {
+            deckTabs.forEach(tab => tab.classList.remove('active'));
+            visibleTabs[0].classList.add('active');
+        }
+    }
+    
+    // Handle deck tab clicks
+    deckTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            deckTabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            const deckType = this.getAttribute('data-deck');
+            displayFlashcards(currentFlashcards, deckType);
+        });
+    });
+    
     // Function to display flashcards
-    function displayFlashcards(flashcards) {
+    function displayFlashcards(flashcards, deckType = 'main') {
         flashcardContainer.innerHTML = '';
         
-        flashcards.forEach((card, index) => {
+        // Filter flashcards based on deck type if needed
+        let cardsToDisplay = flashcards;
+        if (deckType === 'definitions' && flashcards.definitions) {
+            cardsToDisplay = flashcards.definitions;
+        } else if (deckType === 'cloze' && flashcards.cloze) {
+            cardsToDisplay = flashcards.cloze;
+        } else if (flashcards.main) {
+            cardsToDisplay = flashcards.main;
+        }
+        
+        // Handle array of cards or object with card types
+        if (!Array.isArray(cardsToDisplay)) {
+            if (cardsToDisplay.main) {
+                cardsToDisplay = cardsToDisplay.main;
+            } else {
+                cardsToDisplay = [];
+            }
+        }
+        
+        if (cardsToDisplay.length === 0) {
+            flashcardContainer.innerHTML = '<p style="text-align: center; color: var(--dark-gray);">No flashcards found for this section.</p>';
+            return;
+        }
+        
+        cardsToDisplay.forEach((card, index) => {
             const flashcardElement = document.createElement('div');
             flashcardElement.className = 'flashcard';
             flashcardElement.innerHTML = `
                 <div class="flashcard-inner">
                     <div class="flashcard-front">
-                        <p>${card.question}</p>
+                        <p>${card.question || card.front}</p>
                     </div>
                     <div class="flashcard-back">
-                        <p>${card.answer}</p>
+                        <p>${card.answer || card.back}</p>
                     </div>
                 </div>
             `;
@@ -176,18 +442,35 @@ function setupHomePage() {
     
     // Save flashcards to localStorage
     saveBtn.addEventListener('click', function() {
-        if (currentFlashcards.length === 0) {
+        if (!currentFlashcards || (Array.isArray(currentFlashcards) && currentFlashcards.length === 0)) {
             alert('No flashcards to save!');
             return;
         }
         
-        localStorage.setItem('savedFlashcards', JSON.stringify(currentFlashcards));
+        // Create a deck object with metadata
+        const deck = {
+            cards: currentFlashcards,
+            title: prompt('Enter a name for this deck:', 'My Flashcards'),
+            created: new Date().toISOString(),
+            lastStudied: null
+        };
+        
+        // Get existing decks or initialize empty array
+        const existingDecks = JSON.parse(localStorage.getItem('savedDecks')) || [];
+        
+        // Add new deck
+        existingDecks.push(deck);
+        
+        // Save back to localStorage
+        localStorage.setItem('savedDecks', JSON.stringify(existingDecks));
+        localStorage.setItem('studyFlashcards', JSON.stringify(currentFlashcards));
+        
         alert('Flashcards saved successfully!');
     });
     
     // Start studying button
     startStudyBtn.addEventListener('click', function() {
-        if (currentFlashcards.length === 0) {
+        if (!currentFlashcards || (Array.isArray(currentFlashcards) && currentFlashcards.length === 0)) {
             alert('No flashcards to study!');
             return;
         }
@@ -195,6 +478,23 @@ function setupHomePage() {
         localStorage.setItem('studyFlashcards', JSON.stringify(currentFlashcards));
         window.location.href = '/flashcards';
     });
+    
+    // Edit flashcards button
+    editBtn.addEventListener('click', function() {
+        alert('Edit mode is coming soon!');
+    });
+    
+    // Helper function to set active tab
+    function setActiveTab(activeTab, inactiveTabs) {
+        activeTab.classList.add('active');
+        inactiveTabs.forEach(tab => tab.classList.remove('active'));
+    }
+    
+    // Helper function to show container
+    function showContainer(containerToShow, containersToHide) {
+        containerToShow.style.display = 'block';
+        containersToHide.forEach(container => container.style.display = 'none');
+    }
 }
 
 function setupStudyPage() {
@@ -206,17 +506,72 @@ function setupStudyPage() {
     const nextBtn = document.getElementById('next-btn');
     const progressText = document.getElementById('progress-text');
     
+    // Study mode selectors
+    const flashcardMode = document.getElementById('flashcard-mode');
+    const quizMode = document.getElementById('quiz-mode');
+    const writeMode = document.getElementById('write-mode');
+    
+    // Self assessment
+    const selfAssessment = document.getElementById('self-assessment');
+    const hardBtn = document.getElementById('hard-btn');
+    const mediumBtn = document.getElementById('medium-btn');
+    const easyBtn = document.getElementById('easy-btn');
+    
+    // Analytics
+    const statValues = document.querySelectorAll('.stat-value');
+    
     let flashcards = [];
     let currentCardIndex = 0;
     let isFlipped = false;
+    let studyStartTime = null;
+    let studyStats = {
+        cardsReviewed: 0,
+        correct: 0,
+        timeSpent: 0,
+        streak: 0
+    };
+    
+    // Toggle between study modes
+    flashcardMode.addEventListener('click', function() {
+        setActiveTab(flashcardMode, [quizMode, writeMode]);
+        // Additional mode-specific setup would go here
+    });
+    
+    quizMode.addEventListener('click', function() {
+        setActiveTab(quizMode, [flashcardMode, writeMode]);
+        alert('Quiz mode coming soon!');
+    });
+    
+    writeMode.addEventListener('click', function() {
+        setActiveTab(writeMode, [flashcardMode, quizMode]);
+        alert('Written answer mode coming soon!');
+    });
     
     // Load flashcards from localStorage
     function loadFlashcards() {
         const savedCards = localStorage.getItem('studyFlashcards');
         if (savedCards) {
-            flashcards = JSON.parse(savedCards);
+            let parsed = JSON.parse(savedCards);
+            
+            // Handle different formats
+            if (Array.isArray(parsed)) {
+                flashcards = parsed;
+            } else if (parsed.main) {
+                flashcards = parsed.main;
+            } else if (parsed.cards && Array.isArray(parsed.cards)) {
+                flashcards = parsed.cards;
+            }
+            
+            // Ensure each card has the expected properties
+            flashcards = flashcards.map(card => {
+                return {
+                    question: card.question || card.front,
+                    answer: card.answer || card.back
+                };
+            });
+            
             progressText.textContent = `0/${flashcards.length}`;
-            return true;
+            return flashcards.length > 0;
         }
         return false;
     }
@@ -232,33 +587,87 @@ function setupStudyPage() {
         flipBtn.disabled = false;
         nextBtn.disabled = false;
         
+        // Shuffle the flashcards
+        shuffleArray(flashcards);
+        
         // Show first card
         showCard(0);
+        
+        // Start timer
+        studyStartTime = new Date();
+        updateStudyStats();
+        
+        // Start timer for updating study time
+        setInterval(updateStudyTime, 60000); // Update every minute
     });
     
     // Flip button handler
     flipBtn.addEventListener('click', function() {
         toggleFlip();
+        
+        // Show self assessment after flip
+        if (isFlipped) {
+            selfAssessment.style.display = 'block';
+        } else {
+            selfAssessment.style.display = 'none';
+        }
+    });
+    
+    // Self assessment buttons
+    hardBtn.addEventListener('click', function() {
+        recordAssessment('hard');
+        nextCard();
+    });
+    
+    mediumBtn.addEventListener('click', function() {
+        recordAssessment('medium');
+        nextCard();
+    });
+    
+    easyBtn.addEventListener('click', function() {
+        recordAssessment('easy');
+        nextCard();
     });
     
     // Next button handler
     nextBtn.addEventListener('click', function() {
+        nextCard();
+    });
+    
+    function nextCard() {
         if (isFlipped) {
             toggleFlip();
         }
+        
+        selfAssessment.style.display = 'none';
         
         if (currentCardIndex < flashcards.length - 1) {
             showCard(currentCardIndex + 1);
         } else {
             // End of deck
-            questionText.textContent = "End of flashcards!";
+            questionText.textContent = "You've completed the deck!";
             answerText.textContent = "";
             nextBtn.disabled = true;
             flipBtn.disabled = true;
             startBtn.disabled = false;
             startBtn.textContent = "Restart";
+            
+            // Update stats for completion
+            studyStats.streak++;
+            updateStudyStats();
         }
-    });
+    }
+    
+    // Record user's self assessment
+    function recordAssessment(level) {
+        studyStats.cardsReviewed++;
+        
+        if (level === 'easy') {
+            studyStats.correct++;
+        }
+        
+        updateStudyStats();
+    }
     
     // Function to show a specific card
     function showCard(index) {
@@ -276,5 +685,46 @@ function setupStudyPage() {
         } else {
             studyCard.querySelector('.flashcard-inner').style.transform = 'rotateY(0deg)';
         }
+    }
+    
+    // Update study statistics
+    function updateStudyStats() {
+        // Calculate accuracy
+        const accuracy = studyStats.cardsReviewed > 0 
+            ? Math.round((studyStats.correct / studyStats.cardsReviewed) * 100) 
+            : 0;
+        
+        // Update the stats display
+        if (statValues.length >= 4) {
+            statValues[0].textContent = studyStats.cardsReviewed;
+            statValues[1].textContent = accuracy + '%';
+            statValues[2].textContent = studyStats.timeSpent;
+            statValues[3].textContent = studyStats.streak;
+        }
+    }
+    
+    // Update study time
+    function updateStudyTime() {
+        if (studyStartTime) {
+            const now = new Date();
+            const diffInMs = now - studyStartTime;
+            const diffInMins = Math.floor(diffInMs / 60000);
+            studyStats.timeSpent = diffInMins;
+            updateStudyStats();
+        }
+    }
+    
+    // Shuffle array (Fisher-Yates algorithm)
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+    
+    // Helper function to set active tab
+    function setActiveTab(activeTab, inactiveTabs) {
+        activeTab.classList.add('active');
+        inactiveTabs.forEach(tab => tab.classList.remove('active'));
     }
 }

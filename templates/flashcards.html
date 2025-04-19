@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Flashcards - AI Flashcard Generator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💡</text></svg>">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=2">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
 </head>
 <body>
     <div class="container">
@@ -16,6 +16,36 @@
         </header>
         
         <main>
+            <!-- Analytics Section -->
+            <section class="analytics-section">
+                <div class="analytics-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Cards Reviewed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0%</div>
+                        <div class="stat-label">Accuracy Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Minutes Studied</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Current Streak</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Study Mode Selector -->
+            <div class="input-selector" style="margin-bottom: 20px;">
+                <button class="selector-btn active" id="flashcard-mode">Flashcards</button>
+                <button class="selector-btn" id="quiz-mode">Quiz Mode</button>
+                <button class="selector-btn" id="write-mode">Written</button>
+            </div>
+            
+            <!-- Study Section -->
             <section class="study-section">
                 <div class="flashcard-study" id="study-card">
                     <div class="flashcard-inner">
@@ -34,14 +64,24 @@
                     <button id="next-btn" disabled>Next Card</button>
                     <span id="progress-text">0/0</span>
                 </div>
+                
+                <!-- Self Assessment (visible after flip) -->
+                <div class="self-assessment" id="self-assessment" style="display: none; margin-top: 20px;">
+                    <p>How well did you know this?</p>
+                    <div class="assessment-buttons" style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+                        <button id="hard-btn" style="background-color: #e74c3c;">Hard</button>
+                        <button id="medium-btn" style="background-color: #f39c12;">Medium</button>
+                        <button id="easy-btn" style="background-color: #2ecc71;">Easy</button>
+                    </div>
+                </div>
             </section>
         </main>
         
         <footer>
-            <p>AI Flashcard Generator &copy; 2025 • Boost your memory with active recall</p>
+            <p>AI Flashcard Generator &copy; 2025 • Optimized with spaced repetition</p>
         </footer>
     </div>
     
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=2"></script>
 </body>
 </html>
