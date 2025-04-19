@@ -37,7 +37,7 @@ function setupHomePage() {
     const editBtn = document.getElementById('edit-btn');
     
     // Deck tabs
-    const deckTabs = document.getElementById('deck-tabs').querySelectorAll('.tab-item');
+    const deckTabs = document.getElementById('deck-tabs')?.querySelectorAll('.tab-item');
     
     // Format options
     const formatOptions = document.querySelectorAll('.format-option');
@@ -57,20 +57,26 @@ function setupHomePage() {
     let uploadedFiles = [];
     
     // Toggle between input types
-    textSelector.addEventListener('click', function() {
-        setActiveTab(textSelector, [topicSelector, fileSelector]);
-        showContainer(textInputContainer, [topicInputContainer, fileInputContainer]);
-    });
+    if (textSelector) {
+        textSelector.addEventListener('click', function() {
+            setActiveTab(textSelector, [topicSelector, fileSelector]);
+            showContainer(textInputContainer, [topicInputContainer, fileInputContainer]);
+        });
+    }
     
-    topicSelector.addEventListener('click', function() {
-        setActiveTab(topicSelector, [textSelector, fileSelector]);
-        showContainer(topicInputContainer, [textInputContainer, fileInputContainer]);
-    });
+    if (topicSelector) {
+        topicSelector.addEventListener('click', function() {
+            setActiveTab(topicSelector, [textSelector, fileSelector]);
+            showContainer(topicInputContainer, [textInputContainer, fileInputContainer]);
+        });
+    }
     
-    fileSelector.addEventListener('click', function() {
-        setActiveTab(fileSelector, [textSelector, topicSelector]);
-        showContainer(fileInputContainer, [textInputContainer, topicInputContainer]);
-    });
+    if (fileSelector) {
+        fileSelector.addEventListener('click', function() {
+            setActiveTab(fileSelector, [textSelector, topicSelector]);
+            showContainer(fileInputContainer, [textInputContainer, topicInputContainer]);
+        });
+    }
     
     // Toggle format options
     formatOptions.forEach(option => {
@@ -102,33 +108,35 @@ function setupHomePage() {
     });
     
     // File upload functionality
-    fileUploadZone.addEventListener('click', function() {
-        fileInput.click();
-    });
-    
-    fileUploadZone.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        this.style.borderColor = '#9b59b6';
-        this.style.backgroundColor = 'rgba(142, 68, 173, 0.1)';
-    });
-    
-    fileUploadZone.addEventListener('dragleave', function() {
-        this.style.borderColor = '';
-        this.style.backgroundColor = '';
-    });
-    
-    fileUploadZone.addEventListener('drop', function(e) {
-        e.preventDefault();
-        this.style.borderColor = '';
-        this.style.backgroundColor = '';
+    if (fileUploadZone) {
+        fileUploadZone.addEventListener('click', function() {
+            fileInput.click();
+        });
         
-        const files = e.dataTransfer.files;
-        handleFiles(files);
-    });
-    
-    fileInput.addEventListener('change', function() {
-        handleFiles(this.files);
-    });
+        fileUploadZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#9b59b6';
+            this.style.backgroundColor = 'rgba(142, 68, 173, 0.1)';
+        });
+        
+        fileUploadZone.addEventListener('dragleave', function() {
+            this.style.borderColor = '';
+            this.style.backgroundColor = '';
+        });
+        
+        fileUploadZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '';
+            this.style.backgroundColor = '';
+            
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+        
+        fileInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+    }
     
     function handleFiles(files) {
         uploadedFiles = Array.from(files);
@@ -165,201 +173,209 @@ function setupHomePage() {
     }
     
     // Text form submission
-    textForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const textInput = document.getElementById('text-input').value.trim();
-        
-        if (!textInput) {
-            alert('Please enter some text to generate flashcards.');
-            return;
-        }
-        
-        // Get options
-        const extractDefinitions = document.getElementById('extract-definitions').checked;
-        const createCloze = document.getElementById('create-cloze').checked;
-        const questionAnswer = document.getElementById('question-answer').checked;
-        
-        // Show loading spinner
-        loadingSection.style.display = 'block';
-        resultsSection.style.display = 'none';
-        
-        // Send text to server for processing
-        const formData = new FormData();
-        formData.append('text_input', textInput);
-        formData.append('format', currentFormat);
-        formData.append('difficulty', currentDifficulty);
-        formData.append('extract_definitions', extractDefinitions);
-        formData.append('create_cloze', createCloze);
-        formData.append('question_answer', questionAnswer);
-        
-        fetch('/generate', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Server error');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Hide loading spinner
-            loadingSection.style.display = 'none';
+    if (textForm) {
+        textForm.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            if (data.error) {
-                alert('Error: ' + data.error);
+            const textInput = document.getElementById('text-input').value.trim();
+            
+            if (!textInput) {
+                alert('Please enter some text to generate flashcards.');
                 return;
             }
             
-            // Store the flashcards
-            currentFlashcards = data.flashcards || [];
+            // Get options
+            const extractDefinitions = document.getElementById('extract-definitions')?.checked || false;
+            const createCloze = document.getElementById('create-cloze')?.checked || false;
+            const questionAnswer = document.getElementById('question-answer')?.checked || true;
             
-            // Display flashcards
-            displayFlashcards(currentFlashcards);
+            // Show loading spinner
+            loadingSection.style.display = 'block';
+            resultsSection.style.display = 'none';
             
-            // Show results section
-            resultsSection.style.display = 'block';
+            // Send text to server for processing
+            const formData = new FormData();
+            formData.append('text_input', textInput);
+            formData.append('format', currentFormat);
+            formData.append('difficulty', currentDifficulty);
+            formData.append('extract_definitions', extractDefinitions);
+            formData.append('create_cloze', createCloze);
+            formData.append('question_answer', questionAnswer);
             
-            // Set up deck tabs
-            setupDeckTabs(data);
-        })
-        .catch(error => {
-            loadingSection.style.display = 'none';
-            alert('Error generating flashcards: ' + error.message);
+            fetch('/generate', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading spinner
+                loadingSection.style.display = 'none';
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                // Store the flashcards
+                currentFlashcards = data.flashcards || [];
+                
+                // Display flashcards
+                displayFlashcards(currentFlashcards);
+                
+                // Show results section
+                resultsSection.style.display = 'block';
+                
+                // Set up deck tabs
+                setupDeckTabs(data);
+            })
+            .catch(error => {
+                loadingSection.style.display = 'none';
+                alert('Error generating flashcards: ' + error.message);
+            });
         });
-    });
+    }
     
     // Topic form submission
-    topicForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const topicInput = document.getElementById('topic-input').value.trim();
-        
-        if (!topicInput) {
-            alert('Please enter a topic to generate flashcards.');
-            return;
-        }
-        
-        // Get options
-        const includeDefinitions = document.getElementById('topic-definitions').checked;
-        const includeFacts = document.getElementById('topic-facts').checked;
-        const includeDates = document.getElementById('topic-dates').checked;
-        
-        // Show loading spinner
-        loadingSection.style.display = 'block';
-        resultsSection.style.display = 'none';
-        
-        // Send topic to server for processing
-        const formData = new FormData();
-        formData.append('topic_input', topicInput);
-        formData.append('difficulty', currentDifficulty);
-        formData.append('include_definitions', includeDefinitions);
-        formData.append('include_facts', includeFacts);
-        formData.append('include_dates', includeDates);
-        
-        fetch('/generate_from_topic', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Server error');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Hide loading spinner
-            loadingSection.style.display = 'none';
+    if (topicForm) {
+        topicForm.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            if (data.error) {
-                alert('Error: ' + data.error);
+            const topicInput = document.getElementById('topic-input').value.trim();
+            
+            if (!topicInput) {
+                alert('Please enter a topic to generate flashcards.');
                 return;
             }
             
-            // Store the flashcards
-            currentFlashcards = data.flashcards || [];
+            // Get options
+            const includeDefinitions = document.getElementById('topic-definitions')?.checked || true;
+            const includeFacts = document.getElementById('topic-facts')?.checked || true;
+            const includeDates = document.getElementById('topic-dates')?.checked || false;
             
-            // Display flashcards
-            displayFlashcards(currentFlashcards);
+            // Show loading spinner
+            loadingSection.style.display = 'block';
+            resultsSection.style.display = 'none';
             
-            // Show results section
-            resultsSection.style.display = 'block';
+            // Send topic to server for processing
+            const formData = new FormData();
+            formData.append('topic_input', topicInput);
+            formData.append('difficulty', currentDifficulty);
+            formData.append('include_definitions', includeDefinitions);
+            formData.append('include_facts', includeFacts);
+            formData.append('include_dates', includeDates);
             
-            // Set up deck tabs
-            setupDeckTabs(data);
-        })
-        .catch(error => {
-            loadingSection.style.display = 'none';
-            alert('Error generating flashcards: ' + error.message);
+            fetch('/generate_from_topic', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading spinner
+                loadingSection.style.display = 'none';
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                // Store the flashcards
+                currentFlashcards = data.flashcards || [];
+                
+                // Display flashcards
+                displayFlashcards(currentFlashcards);
+                
+                // Show results section
+                resultsSection.style.display = 'block';
+                
+                // Set up deck tabs
+                setupDeckTabs(data);
+            })
+            .catch(error => {
+                loadingSection.style.display = 'none';
+                alert('Error generating flashcards: ' + error.message);
+            });
         });
-    });
+    }
     
     // File form submission
-    fileForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (uploadedFiles.length === 0) {
-            alert('Please upload at least one file.');
-            return;
-        }
-        
-        // Get options
-        const extractAll = document.getElementById('file-extract-all').checked;
-        const useOcr = document.getElementById('file-ocr').checked;
-        
-        // Show loading spinner
-        loadingSection.style.display = 'block';
-        resultsSection.style.display = 'none';
-        
-        // Send files to server for processing
-        const formData = new FormData();
-        uploadedFiles.forEach(file => {
-            formData.append('files', file);
-        });
-        formData.append('extract_all', extractAll);
-        formData.append('use_ocr', useOcr);
-        formData.append('difficulty', currentDifficulty);
-        
-        fetch('/generate_from_files', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Server error');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Hide loading spinner
-            loadingSection.style.display = 'none';
+    if (fileForm) {
+        fileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            if (data.error) {
-                alert('Error: ' + data.error);
+            if (uploadedFiles.length === 0) {
+                alert('Please upload at least one file.');
                 return;
             }
             
-            // Store the flashcards
-            currentFlashcards = data.flashcards || [];
+            // Get options
+            const extractAll = document.getElementById('file-extract-all')?.checked || true;
+            const useOcr = document.getElementById('file-ocr')?.checked || false;
             
-            // Display flashcards
-            displayFlashcards(currentFlashcards);
+            // Show loading spinner
+            loadingSection.style.display = 'block';
+            resultsSection.style.display = 'none';
             
-            // Show results section
-            resultsSection.style.display = 'block';
+            // Send files to server for processing
+            const formData = new FormData();
+            uploadedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            formData.append('extract_all', extractAll);
+            formData.append('use_ocr', useOcr);
+            formData.append('difficulty', currentDifficulty);
             
-            // Set up deck tabs
-            setupDeckTabs(data);
-        })
-        .catch(error => {
-            loadingSection.style.display = 'none';
-            alert('Error generating flashcards: ' + error.message);
+            fetch('/generate_from_files', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading spinner
+                loadingSection.style.display = 'none';
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                // Store the flashcards
+                currentFlashcards = data.flashcards || [];
+                
+                // Display flashcards
+                displayFlashcards(currentFlashcards);
+                
+                // Show results section
+                resultsSection.style.display = 'block';
+                
+                // Set up deck tabs
+                setupDeckTabs(data);
+            })
+            .catch(error => {
+                loadingSection.style.display = 'none';
+                alert('Error generating flashcards: ' + error.message);
+            });
         });
-    });
+    }
     
     // Setup deck tabs
     function setupDeckTabs(data) {
+        if (!deckTabs) return;
+        
         // Show/hide tabs based on available data
         deckTabs.forEach(tab => {
             const deckType = tab.getAttribute('data-deck');
@@ -379,15 +395,17 @@ function setupHomePage() {
     }
     
     // Handle deck tab clicks
-    deckTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            deckTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            const deckType = this.getAttribute('data-deck');
-            displayFlashcards(currentFlashcards, deckType);
+    if (deckTabs) {
+        deckTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                deckTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const deckType = this.getAttribute('data-deck');
+                displayFlashcards(currentFlashcards, deckType);
+            });
         });
-    });
+    }
     
     // Function to display flashcards
     function displayFlashcards(flashcards, deckType = 'main') {
@@ -441,48 +459,54 @@ function setupHomePage() {
     }
     
     // Save flashcards to localStorage
-    saveBtn.addEventListener('click', function() {
-        if (!currentFlashcards || (Array.isArray(currentFlashcards) && currentFlashcards.length === 0)) {
-            alert('No flashcards to save!');
-            return;
-        }
-        
-        // Create a deck object with metadata
-        const deck = {
-            cards: currentFlashcards,
-            title: prompt('Enter a name for this deck:', 'My Flashcards'),
-            created: new Date().toISOString(),
-            lastStudied: null
-        };
-        
-        // Get existing decks or initialize empty array
-        const existingDecks = JSON.parse(localStorage.getItem('savedDecks')) || [];
-        
-        // Add new deck
-        existingDecks.push(deck);
-        
-        // Save back to localStorage
-        localStorage.setItem('savedDecks', JSON.stringify(existingDecks));
-        localStorage.setItem('studyFlashcards', JSON.stringify(currentFlashcards));
-        
-        alert('Flashcards saved successfully!');
-    });
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            if (!currentFlashcards || (Array.isArray(currentFlashcards) && currentFlashcards.length === 0)) {
+                alert('No flashcards to save!');
+                return;
+            }
+            
+            // Create a deck object with metadata
+            const deck = {
+                cards: currentFlashcards,
+                title: prompt('Enter a name for this deck:', 'My Flashcards'),
+                created: new Date().toISOString(),
+                lastStudied: null
+            };
+            
+            // Get existing decks or initialize empty array
+            const existingDecks = JSON.parse(localStorage.getItem('savedDecks')) || [];
+            
+            // Add new deck
+            existingDecks.push(deck);
+            
+            // Save back to localStorage
+            localStorage.setItem('savedDecks', JSON.stringify(existingDecks));
+            localStorage.setItem('studyFlashcards', JSON.stringify(currentFlashcards));
+            
+            alert('Flashcards saved successfully!');
+        });
+    }
     
     // Start studying button
-    startStudyBtn.addEventListener('click', function() {
-        if (!currentFlashcards || (Array.isArray(currentFlashcards) && currentFlashcards.length === 0)) {
-            alert('No flashcards to study!');
-            return;
-        }
-        
-        localStorage.setItem('studyFlashcards', JSON.stringify(currentFlashcards));
-        window.location.href = '/flashcards';
-    });
+    if (startStudyBtn) {
+        startStudyBtn.addEventListener('click', function() {
+            if (!currentFlashcards || (Array.isArray(currentFlashcards) && currentFlashcards.length === 0)) {
+                alert('No flashcards to study!');
+                return;
+            }
+            
+            localStorage.setItem('studyFlashcards', JSON.stringify(currentFlashcards));
+            window.location.href = '/flashcards';
+        });
+    }
     
     // Edit flashcards button
-    editBtn.addEventListener('click', function() {
-        alert('Edit mode is coming soon!');
-    });
+    if (editBtn) {
+        editBtn.addEventListener('click', function() {
+            alert('Edit mode is coming soon!');
+        });
+    }
     
     // Helper function to set active tab
     function setActiveTab(activeTab, inactiveTabs) {
@@ -517,6 +541,13 @@ function setupStudyPage() {
     const mediumBtn = document.getElementById('medium-btn');
     const easyBtn = document.getElementById('easy-btn');
     
+    // Quiz mode elements (created dynamically)
+    let quizOptions = null;
+    
+    // Written mode elements (created dynamically)
+    let answerInput = null;
+    let checkAnswerBtn = null;
+    
     // Analytics
     const statValues = document.querySelectorAll('.stat-value');
     
@@ -524,6 +555,7 @@ function setupStudyPage() {
     let currentCardIndex = 0;
     let isFlipped = false;
     let studyStartTime = null;
+    let currentStudyMode = 'flashcard';
     let studyStats = {
         cardsReviewed: 0,
         correct: 0,
@@ -534,18 +566,229 @@ function setupStudyPage() {
     // Toggle between study modes
     flashcardMode.addEventListener('click', function() {
         setActiveTab(flashcardMode, [quizMode, writeMode]);
-        // Additional mode-specific setup would go here
+        switchStudyMode('flashcard');
     });
     
     quizMode.addEventListener('click', function() {
         setActiveTab(quizMode, [flashcardMode, writeMode]);
-        alert('Quiz mode coming soon!');
+        switchStudyMode('quiz');
     });
     
     writeMode.addEventListener('click', function() {
         setActiveTab(writeMode, [flashcardMode, quizMode]);
-        alert('Written answer mode coming soon!');
+        switchStudyMode('write');
     });
+    
+    // Function to switch study modes
+    function switchStudyMode(mode) {
+        currentStudyMode = mode;
+        
+        // Reset card state
+        if (isFlipped) {
+            toggleFlip();
+        }
+        
+        // Clear any existing UI elements
+        clearStudyModeElements();
+        
+        // Update UI based on mode
+        if (mode === 'quiz') {
+            flipBtn.style.display = 'none';
+            setupQuizMode();
+        } else if (mode === 'write') {
+            flipBtn.style.display = 'none';
+            setupWrittenMode();
+        } else {
+            // Default flashcard mode
+            flipBtn.style.display = 'inline-block';
+        }
+        
+        // Redisplay current card if we're already studying
+        if (flashcards.length > 0 && !startBtn.disabled) {
+            showCard(currentCardIndex);
+        }
+    }
+    
+    // Setup quiz mode UI
+    function setupQuizMode() {
+        // Create quiz options container if it doesn't exist
+        if (!quizOptions) {
+            quizOptions = document.createElement('div');
+            quizOptions.className = 'quiz-options';
+            quizOptions.style.display = 'none';
+            quizOptions.style.marginTop = '20px';
+            
+            // Add after the study card
+            studyCard.parentNode.insertBefore(quizOptions, studyCard.nextSibling);
+        }
+    }
+    
+    // Setup written mode UI
+    function setupWrittenMode() {
+        // Create answer input and check button if they don't exist
+        if (!answerInput) {
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'written-answer-container';
+            inputContainer.style.marginTop = '20px';
+            inputContainer.style.display = 'none';
+            
+            answerInput = document.createElement('input');
+            answerInput.type = 'text';
+            answerInput.className = 'written-answer-input';
+            answerInput.placeholder = 'Type your answer here...';
+            answerInput.style.width = '100%';
+            answerInput.style.padding = '10px';
+            answerInput.style.marginBottom = '10px';
+            answerInput.style.borderRadius = '8px';
+            answerInput.style.border = '1px solid #e0e0e0';
+            
+            checkAnswerBtn = document.createElement('button');
+            checkAnswerBtn.textContent = 'Check Answer';
+            checkAnswerBtn.className = 'check-answer-btn';
+            
+            // Bind the check answer functionality
+            checkAnswerBtn.addEventListener('click', checkWrittenAnswer);
+            
+            // Add to the container
+            inputContainer.appendChild(answerInput);
+            inputContainer.appendChild(checkAnswerBtn);
+            
+            // Add after the study card
+            studyCard.parentNode.insertBefore(inputContainer, studyCard.nextSibling);
+        }
+    }
+    
+    // Clear any special study mode elements
+    function clearStudyModeElements() {
+        if (quizOptions) {
+            quizOptions.style.display = 'none';
+        }
+        
+        if (answerInput) {
+            answerInput.parentNode.style.display = 'none';
+        }
+        
+        selfAssessment.style.display = 'none';
+    }
+    
+    // Generate quiz options for current card
+    function generateQuizOptions() {
+        if (!quizOptions) return;
+        
+        quizOptions.innerHTML = '';
+        quizOptions.style.display = 'block';
+        
+        const correctAnswer = flashcards[currentCardIndex].answer;
+        
+        // Generate 3 incorrect options
+        let options = [correctAnswer];
+        
+        // Add other flashcard answers as wrong answers
+        for (let i = 0; i < flashcards.length; i++) {
+            if (i !== currentCardIndex && options.length < 4) {
+                options.push(flashcards[i].answer);
+            }
+        }
+        
+        // If we don't have enough options, add some generic wrong answers
+        while (options.length < 4) {
+            options.push(`Incorrect option ${options.length}`);
+        }
+        
+        // Shuffle the options
+        shuffleArray(options);
+        
+        // Create option buttons
+        options.forEach(option => {
+            const optionBtn = document.createElement('button');
+            optionBtn.textContent = option;
+            optionBtn.style.display = 'block';
+            optionBtn.style.width = '100%';
+            optionBtn.style.marginBottom = '10px';
+            optionBtn.style.textAlign = 'left';
+            optionBtn.style.padding = '10px';
+            optionBtn.style.borderRadius = '8px';
+            optionBtn.style.border = 'none';
+            optionBtn.style.backgroundColor = '#f0f0f0';
+            optionBtn.style.cursor = 'pointer';
+            
+            // Check if the option is correct
+            optionBtn.addEventListener('click', function() {
+                const isCorrect = option === correctAnswer;
+                
+                // Style based on correctness
+                if (isCorrect) {
+                    optionBtn.style.backgroundColor = '#2ecc71';
+                    optionBtn.style.color = 'white';
+                    studyStats.correct++;
+                } else {
+                    optionBtn.style.backgroundColor = '#e74c3c';
+                    optionBtn.style.color = 'white';
+                    
+                    // Highlight the correct answer
+                    const buttons = quizOptions.querySelectorAll('button');
+                    buttons.forEach(btn => {
+                        if (btn.textContent === correctAnswer) {
+                            btn.style.backgroundColor = '#2ecc71';
+                            btn.style.color = 'white';
+                        }
+                    });
+                }
+                
+                // Disable all options after selection
+                const buttons = quizOptions.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.cursor = 'default';
+                });
+                
+                // Show next button
+                nextBtn.disabled = false;
+                
+                // Update stats
+                studyStats.cardsReviewed++;
+                updateStudyStats();
+            });
+            
+            quizOptions.appendChild(optionBtn);
+        });
+    }
+    
+    // Check written answer
+    function checkWrittenAnswer() {
+        const userAnswer = answerInput.value.trim().toLowerCase();
+        const correctAnswer = flashcards[currentCardIndex].answer.toLowerCase();
+        
+        // Simple string comparison - could be enhanced with fuzzy matching
+        const isCorrect = userAnswer === correctAnswer;
+        
+        // Show the correct answer
+        if (isFlipped) {
+            toggleFlip();
+        }
+        toggleFlip(); // Flip to show the answer
+        
+        // Style the input based on correctness
+        if (isCorrect) {
+            answerInput.style.borderColor = '#2ecc71';
+            answerInput.style.backgroundColor = 'rgba(46, 204, 113, 0.1)';
+            studyStats.correct++;
+        } else {
+            answerInput.style.borderColor = '#e74c3c';
+            answerInput.style.backgroundColor = 'rgba(231, 76, 60, 0.1)';
+        }
+        
+        // Disable input after submission
+        answerInput.disabled = true;
+        checkAnswerBtn.disabled = true;
+        
+        // Enable next button
+        nextBtn.disabled = false;
+        
+        // Update stats
+        studyStats.cardsReviewed++;
+        updateStudyStats();
+    }
     
     // Load flashcards from localStorage
     function loadFlashcards() {
@@ -584,7 +827,9 @@ function setupStudyPage() {
         }
         
         startBtn.disabled = true;
-        flipBtn.disabled = false;
+        if (currentStudyMode === 'flashcard') {
+            flipBtn.disabled = false;
+        }
         nextBtn.disabled = false;
         
         // Shuffle the flashcards
@@ -639,7 +884,24 @@ function setupStudyPage() {
             toggleFlip();
         }
         
+        // Hide assessment UI
         selfAssessment.style.display = 'none';
+        
+        // Reset UI for next card
+        if (currentStudyMode === 'quiz') {
+            quizOptions.style.display = 'none';
+            nextBtn.disabled = true;
+        } else if (currentStudyMode === 'write') {
+            // Reset written mode
+            if (answerInput) {
+                answerInput.value = '';
+                answerInput.disabled = false;
+                answerInput.style.borderColor = '';
+                answerInput.style.backgroundColor = '';
+                checkAnswerBtn.disabled = false;
+                nextBtn.disabled = true;
+            }
+        }
         
         if (currentCardIndex < flashcards.length - 1) {
             showCard(currentCardIndex + 1);
@@ -651,6 +913,9 @@ function setupStudyPage() {
             flipBtn.disabled = true;
             startBtn.disabled = false;
             startBtn.textContent = "Restart";
+            
+            // Hide any mode-specific elements
+            clearStudyModeElements();
             
             // Update stats for completion
             studyStats.streak++;
@@ -675,6 +940,15 @@ function setupStudyPage() {
         questionText.textContent = flashcards[index].question;
         answerText.textContent = flashcards[index].answer;
         progressText.textContent = `${index + 1}/${flashcards.length}`;
+        
+        // Mode-specific setup
+        if (currentStudyMode === 'quiz') {
+            generateQuizOptions();
+        } else if (currentStudyMode === 'write') {
+            if (answerInput && answerInput.parentNode) {
+                answerInput.parentNode.style.display = 'block';
+            }
+        }
     }
     
     // Function to toggle card flip

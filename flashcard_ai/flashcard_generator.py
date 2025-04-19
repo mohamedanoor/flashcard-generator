@@ -1,13 +1,12 @@
 import os
 import json
 from dotenv import load_dotenv
-import openai
 from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
 
-# Initialize the OpenAI client - this is the updated way to use the API
+# Initialize the OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def generate_flashcards(text, difficulty='easy', extract_definitions=False, create_cloze=False, question_answer=True):
@@ -33,46 +32,73 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
         else:  # hard
             num_cards = 10
         
-        # Prepare card types based on options
-        card_types = []
+        # Prepare detailed instructions for each card type
+        instructions = []
+        output_format = {}
+        
         if question_answer:
-            card_types.append("question-answer pairs")
+            instructions.append("""
+            Question-Answer pairs:
+            - Identify key concepts, facts, and relationships
+            - Create direct questions that test understanding
+            - Format as {"question": "What is X?", "answer": "X is Y"}
+            """)
+            output_format["main"] = "List of question-answer objects with 'question' and 'answer' keys"
+        
         if extract_definitions:
-            card_types.append("term definitions")
+            instructions.append("""
+            Definitions:
+            - Identify important terms and concepts in the text
+            - Create definition cards with the term as the question
+            - Format as {"question": "What is [term]?", "answer": "definition of the term"}
+            """)
+            output_format["definitions"] = "List of definition objects with 'question' and 'answer' keys"
+        
         if create_cloze:
-            card_types.append("fill-in-the-blank")
+            instructions.append("""
+            Fill-in-the-blank:
+            - Take important sentences and replace key terms with blanks
+            - The question should contain the sentence with a blank (use "_____")
+            - The answer should be the missing word or phrase
+            - Format as {"question": "Process of _____ involves cell division", "answer": "mitosis"}
+            """)
+            output_format["cloze"] = "List of cloze deletion objects with 'question' and 'answer' keys"
         
         # Default if nothing is selected
-        if not card_types:
-            card_types = ["question-answer pairs"]
+        if not instructions:
+            instructions.append("Create basic question-answer pairs")
+            output_format["main"] = "List of question-answer objects"
         
         # Create the prompt
         system_prompt = """
         You are an expert educator who creates high-quality flashcards from text.
-        Your goal is to extract the most important concepts and create effective study materials.
+        You must strictly follow the requested format for each flashcard type.
+        Separate your output into the exact requested categories (main, definitions, cloze).
         """
         
         user_prompt = f"""
-        Please create {num_cards} flashcards from the following text. 
-        Difficulty level: {difficulty}.
+        Create flashcards from the following text, with a total of approximately {num_cards} cards distributed across the requested types.
+        Difficulty level: {difficulty}
         
-        Include these card types: {', '.join(card_types)}.
+        Instructions for card types:
+        {' '.join(instructions)}
         
-        Format your response as a JSON object with these keys:
-        - "main": A list of question-answer flashcards with "question" and "answer" keys
-        - "definitions": A list of term definition flashcards (if requested)
-        - "cloze": A list of fill-in-the-blank flashcards (if requested)
+        Format your response as a JSON object with these specific keys:
+        {json.dumps(output_format, indent=2)}
         
-        Each list should contain objects with "question" and "answer" keys.
-        Make the content concise, clear, and focused on the most important concepts.
+        IMPORTANT: 
+        - DO NOT mix card types - each type must go in its own specific section
+        - For definition cards, focus ONLY on terminology definitions
+        - For cloze cards, ALWAYS include blanks (____) in the question
+        - Make all content concise and clear
         
         TEXT TO PROCESS:
         {text}
         """
         
-        # Call the OpenAI API using the new client format
+        # Call the OpenAI API
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # You can use "gpt-4" for higher quality but higher cost
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
@@ -81,7 +107,7 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
             max_tokens=2000
         )
         
-        # Extract and parse the content from the new response format
+        # Extract and parse the content
         content = response.choices[0].message.content
         
         # Clean up the response to ensure it's valid JSON
@@ -96,17 +122,18 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
             # Parse the JSON
             flashcards = json.loads(content)
         except json.JSONDecodeError:
-            # If JSON parsing fails, create a simple fallback response
             print(f"Error parsing JSON response: {content[:100]}...")
-            return {
-                "main": [
-                    {"question": "What are the key concepts in this text?", 
-                     "answer": "The text covers important information that has been processed into flashcards."}
-                ]
-            }
+            # Create a basic structure based on requirements
+            flashcards = {}
+            if question_answer:
+                flashcards["main"] = [{"question": "What is this text about?", "answer": "Key concepts from the provided text."}]
+            if extract_definitions:
+                flashcards["definitions"] = [{"question": "What is an important term?", "answer": "Definition of that term."}]
+            if create_cloze:
+                flashcards["cloze"] = [{"question": "This text discusses important _____.", "answer": "concepts"}]
         
-        # Ensure all required sections exist
-        if "main" not in flashcards:
+        # Ensure all requested sections exist with at least empty arrays
+        if question_answer and "main" not in flashcards:
             flashcards["main"] = []
         if extract_definitions and "definitions" not in flashcards:
             flashcards["definitions"] = []
@@ -121,8 +148,6 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
         return {
             "main": [
                 {"question": "What is the main topic of this text?", 
-                 "answer": "Review the text to identify key concepts."},
-                {"question": "What are the key points in this text?",
-                 "answer": "The text covers several important aspects of the topic."}
+                 "answer": "Review the text to identify key concepts."}
             ]
         }
