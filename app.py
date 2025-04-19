@@ -7,6 +7,7 @@ from flask import Flask, render_template, request, jsonify
 from flashcard_ai.text_processor import process_text
 from flashcard_ai.flashcard_generator import generate_flashcards
 from flashcard_ai.topic_generator import generate_topic_flashcards
+from flashcard_ai.file_processor import process_files  # Add this line
 from dotenv import load_dotenv
 
 # Load environment variables
