@@ -1111,7 +1111,7 @@ header {
 .auth-nav {
     position: absolute;
     top: -50px;
-    right: 10px;       /* Closer to right edge */
+    right: 0px;       /* Closer to right edge */
     display: flex;
     gap: 10px;         /* Reduced gap between buttons */
     z-index: 5;
