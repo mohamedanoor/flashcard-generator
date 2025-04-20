@@ -1098,23 +1098,23 @@ footer {
         padding: 15px;
     }
 }
-/* Fix for login/signup buttons positioning and clickability */
+/* Adjusted positioning for login/signup buttons */
 
-/* Reposition header elements for better spacing */
+/* Maintain header margin for spacing */
 header {
-    margin-top: 60px;  /* Add space at the top to move title below the auth buttons */
+    margin-top: 60px;
     position: relative;
-    z-index: 1;        /* Ensure proper stacking context */
+    z-index: 1;
 }
 
-/* Fix auth navigation positioning */
+/* Adjust auth nav position closer to right corner */
 .auth-nav {
     position: absolute;
-    top: -50px;        /* Move buttons above the title */
-    right: 20px;
+    top: -50px;
+    right: 10px;       /* Closer to right edge */
     display: flex;
-    gap: 15px;
-    z-index: 5;        /* Higher z-index to ensure buttons are clickable */
+    gap: 10px;         /* Reduced gap between buttons */
+    z-index: 5;
 }
 
 .auth-nav a {
@@ -1124,30 +1124,27 @@ header {
     border-radius: 20px;
     background-color: rgba(142, 68, 173, 0.1);
     transition: all 0.2s ease;
-    position: relative;    /* Ensure position context for z-index */
-    z-index: 10;           /* Even higher z-index */
+    position: relative;
+    z-index: 10;
+    font-size: 0.9rem;  /* Slightly smaller font for a cleaner look */
 }
 
 .auth-nav a:hover {
     background-color: rgba(142, 68, 173, 0.2);
-    transform: translateY(-2px);  /* Slight hover effect */
+    transform: translateY(-2px);
 }
 
-/* Ensure welcome message has proper positioning as well */
+/* Match welcome message positioning */
 .welcome-message {
     position: absolute;
-    top: -50px;        /* Match the auth-nav positioning */
-    right: 20px;
+    top: -50px;
+    right: 10px;       /* Match auth-nav right position */
     color: var(--dark-gray);
-    z-index: 5;        /* Match auth-nav z-index */
+    z-index: 5;
 }
 
-/* Fix for mobile */
+/* Responsive adjustments */
 @media (max-width: 768px) {
-    header {
-        margin-top: 70px;  /* More space for mobile */
-    }
-    
     .auth-nav, .welcome-message {
         width: 100%;
         right: 0;
