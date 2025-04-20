@@ -8,3 +8,5 @@ gunicorn==20.1.0
 httpx==0.27.2
 pdfminer.six==20221105
 python-docx==0.8.11
+Flask-Login==0.6.2
+Flask-SQLAlchemy==3.0.5

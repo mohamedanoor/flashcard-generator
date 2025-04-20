@@ -36,6 +36,66 @@ function setupHomePage() {
     const startStudyBtn = document.getElementById('start-study-btn');
     const editBtn = document.getElementById('edit-btn');
     
+    // Add My Decks button if logged in
+    if (document.body.classList.contains('logged-in')) {
+        const myDecksBtn = document.createElement('a');
+        myDecksBtn.href = '/my_decks';
+        myDecksBtn.className = 'my-decks-btn';
+        myDecksBtn.textContent = 'My Decks';
+        document.querySelector('.input-section').appendChild(myDecksBtn);
+    }
+    
+    // Add Import Deck button
+    const importDeckBtn = document.createElement('button');
+    importDeckBtn.id = 'import-deck-btn';
+    importDeckBtn.className = 'import-deck-btn'; 
+    importDeckBtn.textContent = 'Import Deck';
+    importDeckBtn.style.position = 'absolute';
+    importDeckBtn.style.top = '20px';
+    importDeckBtn.style.left = '20px';
+    importDeckBtn.style.backgroundColor = '#3498db';
+    
+    // Add to input section
+    document.querySelector('.input-section').appendChild(importDeckBtn);
+    
+    // Create hidden file input for deck imports
+    const deckFileInput = document.createElement('input');
+    deckFileInput.type = 'file';
+    deckFileInput.accept = '.json';
+    deckFileInput.style.display = 'none';
+    document.querySelector('.input-section').appendChild(deckFileInput);
+    
+    // Handle import button click
+    importDeckBtn.addEventListener('click', function() {
+        deckFileInput.click();
+    });
+    
+    // Handle file selection for deck import
+    deckFileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const deck = JSON.parse(e.target.result);
+                
+                // Display the flashcards
+                currentFlashcards = deck.cards;
+                displayFlashcards(currentFlashcards);
+                
+                // Show results section
+                resultsSection.style.display = 'block';
+                
+                alert(`Deck "${deck.title}" imported successfully!`);
+            } catch (error) {
+                alert('Error importing deck: Invalid file format');
+                console.error(error);
+            }
+        };
+        reader.readAsText(file);
+    });
+    
     // Deck tabs
     const deckTabs = document.getElementById('deck-tabs')?.querySelectorAll('.tab-item');
     
@@ -232,6 +292,9 @@ function setupHomePage() {
                 
                 // Set up deck tabs
                 setupDeckTabs(data);
+                
+                // Log the study activity
+                logStudyActivity('text', textInput.substring(0, 50) + '...');
             })
             .catch(error => {
                 loadingSection.style.display = 'none';
@@ -299,6 +362,9 @@ function setupHomePage() {
                 
                 // Set up deck tabs
                 setupDeckTabs(data);
+                
+                // Log the study activity
+                logStudyActivity('topic', topicInput);
             })
             .catch(error => {
                 loadingSection.style.display = 'none';
@@ -364,6 +430,10 @@ function setupHomePage() {
                 
                 // Set up deck tabs
                 setupDeckTabs(data);
+                
+                // Log the study activity
+                const fileNames = uploadedFiles.map(f => f.name).join(', ');
+                logStudyActivity('file', fileNames);
             })
             .catch(error => {
                 loadingSection.style.display = 'none';
@@ -458,7 +528,28 @@ function setupHomePage() {
         });
     }
     
-    // Save flashcards to localStorage
+    // Log study activity
+    function logStudyActivity(type, content) {
+        // Get existing log or initialize empty array
+        const studyLog = JSON.parse(localStorage.getItem('studyLog')) || [];
+        
+        // Add new entry
+        studyLog.push({
+            type: type,
+            content: content,
+            timestamp: new Date().toISOString()
+        });
+        
+        // Keep only the last 50 entries
+        while (studyLog.length > 50) {
+            studyLog.shift();
+        }
+        
+        // Save back to localStorage
+        localStorage.setItem('studyLog', JSON.stringify(studyLog));
+    }
+    
+    // Save flashcards to localStorage and offer download
     if (saveBtn) {
         saveBtn.addEventListener('click', function() {
             if (!currentFlashcards || (Array.isArray(currentFlashcards) && currentFlashcards.length === 0)) {
@@ -467,25 +558,65 @@ function setupHomePage() {
             }
             
             // Create a deck object with metadata
+            const deckTitle = prompt('Enter a name for this deck:', 'My Flashcards');
+            if (!deckTitle) return; // User cancelled the prompt
+            
             const deck = {
+                title: deckTitle,
                 cards: currentFlashcards,
-                title: prompt('Enter a name for this deck:', 'My Flashcards'),
                 created: new Date().toISOString(),
                 lastStudied: null
             };
             
-            // Get existing decks or initialize empty array
-            const existingDecks = JSON.parse(localStorage.getItem('savedDecks')) || [];
-            
-            // Add new deck
-            existingDecks.push(deck);
-            
-            // Save back to localStorage
-            localStorage.setItem('savedDecks', JSON.stringify(existingDecks));
-            localStorage.setItem('studyFlashcards', JSON.stringify(currentFlashcards));
-            
-            alert('Flashcards saved successfully!');
+            // If user is logged in, save to server
+            if (document.body.classList.contains('logged-in')) {
+                // Save to server
+                fetch('/save_deck', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(deck)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Also download the file
+                        downloadDeck(deck);
+                        alert('Deck saved to your account and downloaded to your computer!');
+                    } else {
+                        alert('Error saving deck: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving deck:', error);
+                    alert('Error saving deck. Try again later.');
+                });
+            } else {
+                // Save to localStorage for non-logged in users
+                const existingDecks = JSON.parse(localStorage.getItem('savedDecks')) || [];
+                existingDecks.push(deck);
+                localStorage.setItem('savedDecks', JSON.stringify(existingDecks));
+                localStorage.setItem('studyFlashcards', JSON.stringify(currentFlashcards));
+                
+                // Download the deck
+                downloadDeck(deck);
+                
+                alert('Flashcards saved locally and downloaded to your computer!');
+            }
         });
+    }
+    
+    // Function to download deck
+    function downloadDeck(deck) {
+        // Generate a downloadable file
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(deck, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", deck.title.replace(/\s+/g, '_') + ".json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
     }
     
     // Start studying button
@@ -562,6 +693,18 @@ function setupStudyPage() {
         timeSpent: 0,
         streak: 0
     };
+    
+    // Check if we have a pre-loaded deck from the server
+    const preloadedDeck = document.getElementById('preloaded-deck');
+    if (preloadedDeck) {
+        try {
+            const deckData = JSON.parse(preloadedDeck.textContent);
+            flashcards = deckData.cards;
+            document.title = `Study: ${deckData.title} - AI Flashcard Generator`;
+        } catch (e) {
+            console.error('Error parsing preloaded deck:', e);
+        }
+    }
     
     // Toggle between study modes
     flashcardMode.addEventListener('click', function() {
@@ -780,6 +923,12 @@ function setupStudyPage() {
     
     // Load flashcards from localStorage
     function loadFlashcards() {
+        // If we already have flashcards from a preloaded deck, use those
+        if (flashcards.length > 0) {
+            progressText.textContent = `0/${flashcards.length}`;
+            return true;
+        }
+        
         const savedCards = localStorage.getItem('studyFlashcards');
         if (savedCards) {
             let parsed = JSON.parse(savedCards);

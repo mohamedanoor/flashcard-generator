@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Decks - AI Flashcard Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=4">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+    <style>
+        .decks-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+        .deck-card {
+            background-color: var(--light-gray);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        .deck-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.05);
+        }
+        .deck-info h3 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        .deck-meta {
+            font-size: 0.9rem;
+            color: var(--dark-gray);
+            margin-top: 5px;
+        }
+        .deck-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .deck-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .load-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .load-btn:hover {
+            background-color: var(--primary-dark);
+        }
+        .download-btn {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        .download-btn:hover {
+            background-color: var(--secondary-dark);
+        }
+        .delete-btn {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--dark-gray);
+        }
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        .create-deck-btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .create-deck-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        .flashes {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            background-color: #d4edda;
+            color: #155724;
+            list-style-type: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>My Flashcard Decks</h1>
+            <p>Manage your saved flashcard decks</p>
+            <a href="{{ url_for('index') }}" class="back-btn">Back to Generator</a>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul class="flashes">
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+            
+            <div class="decks-container">
+                {% if decks %}
+                    {% for deck in decks %}
+                        <div class="deck-card">
+                            <div class="deck-info">
+                                <h3>{{ deck.title }}</h3>
+                                <div class="deck-meta">
+                                    <span>Created: {{ deck.created_at.strftime('%Y-%m-%d') }}</span>
+                                    {% if deck.last_studied %}
+                                        <span> • Last studied: {{ deck.last_studied.strftime('%Y-%m-%d') }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="deck-actions">
+                                <a href="{{ url_for('load_deck', deck_id=deck.id) }}" class="deck-btn load-btn">Study</a>
+                                <a href="{{ url_for('download_deck', deck_id=deck.id) }}" class="deck-btn download-btn">Download</a>
+                                <form action="{{ url_for('delete_deck', deck_id=deck.id) }}" method="post" style="display: inline;">
+                                    <button type="submit" class="deck-btn delete-btn" onclick="return confirm('Are you sure you want to delete this deck?')">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>No flashcard decks yet</h3>
+                        <p>Generate and save some flashcards to get started!</p>
+                        <a href="{{ url_for('index') }}" class="create-deck-btn">Create Flashcards</a>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+        
+        <footer>
+            <p>AI Flashcard Generator &copy; 2025 • Created to enhance learning</p>
+        </footer>
+    </div>
+</body>
+</html>

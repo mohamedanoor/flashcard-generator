@@ -4,15 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Flashcards - AI Flashcard Generator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+    <style>
+        .auth-nav {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .auth-nav a {
+            color: var(--primary-color);
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            background-color: rgba(142, 68, 173, 0.1);
+            transition: all 0.2s ease;
+        }
+        .auth-nav a:hover {
+            background-color: rgba(142, 68, 173, 0.2);
+        }
+        .welcome-message {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: var(--dark-gray);
+        }
+        .logout-btn {
+            margin-left: 10px;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+    </style>
 </head>
-<body>
+<body class="{{ 'logged-in' if current_user.is_authenticated else '' }}">
     <div class="container">
+        {% if current_user.is_authenticated %}
+            <div class="welcome-message">
+                Welcome, {{ current_user.username }}!
+                <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
+            </div>
+        {% else %}
+            <div class="auth-nav">
+                <a href="{{ url_for('login') }}">Log in</a>
+                <a href="{{ url_for('signup') }}">Sign up</a>
+            </div>
+        {% endif %}
+        
         <header>
             <h1>Study Your Flashcards</h1>
-            <a href="/" class="back-btn">Back to Generator</a>
+            <a href="{{ url_for('index') }}" class="back-btn">Back to Generator</a>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('my_decks') }}" class="back-btn" style="margin-left: 15px;">My Decks</a>
+            {% endif %}
         </header>
         
         <main>
@@ -58,7 +104,6 @@
                     </div>
                 </div>
                 
-                <!-- Controls will remain visible for all modes -->
                 <div class="study-controls">
                     <button id="start-btn">Start</button>
                     <button id="flip-btn" disabled>Flip Card</button>
@@ -66,7 +111,7 @@
                     <span id="progress-text">0/0</span>
                 </div>
                 
-                <!-- Self Assessment (visible after flip in flashcard mode) -->
+                <!-- Self Assessment (visible after flip) -->
                 <div class="self-assessment" id="self-assessment" style="display: none; margin-top: 20px;">
                     <p>How well did you know this?</p>
                     <div class="assessment-buttons" style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
@@ -83,6 +128,16 @@
         </footer>
     </div>
     
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=3"></script>
+    {% if deck %}
+    <!-- Pass deck data to JavaScript -->
+    <script id="preloaded-deck" type="application/json">
+        {
+            "title": "{{ deck.title }}",
+            "cards": {{ deck.get_cards()|tojson }}
+        }
+    </script>
+    {% endif %}
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=4"></script>
 </body>
 </html>
