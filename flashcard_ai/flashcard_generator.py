@@ -9,7 +9,7 @@ load_dotenv()
 # Initialize the OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generate_flashcards(text, difficulty='easy', extract_definitions=False, create_cloze=False, question_answer=True, model="gpt-4"):
+def generate_flashcards(text, difficulty='easy', extract_definitions=False, create_cloze=False, question_answer=True, model="gpt-3.5"):
     """
     Generate flashcards from text using OpenAI's API
     

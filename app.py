@@ -131,8 +131,8 @@ def generate():
         create_cloze = request.form.get('create_cloze') == 'true'
         question_answer = request.form.get('question_answer', 'true') == 'true'
         
-        # Get model selection (default to GPT-4)
-        model = request.form.get('model', 'gpt-4')
+        # Get model selection (default to GPT-3.5)
+        model = request.form.get('model', 'gpt-3.5')
         
         if not text_input:
             return jsonify({'error': 'No text provided'}), 400
@@ -180,8 +180,8 @@ def generate_from_topic():
         include_facts = request.form.get('include_facts') == 'true'
         include_dates = request.form.get('include_dates') == 'true'
         
-        # Get model selection (default to GPT-4)
-        model = request.form.get('model', 'gpt-4')
+        # Get model selection (default to GPT-3.5)
+        model = request.form.get('model', 'gpt-3.5')
         
         if not topic_input:
             return jsonify({'error': 'No topic provided'}), 400
@@ -221,8 +221,8 @@ def generate_from_files():
         extract_all = request.form.get('extract_all') == 'true'
         use_ocr = request.form.get('use_ocr') == 'true'
         
-        # Get model selection (default to GPT-4)
-        model = request.form.get('model', 'gpt-4')
+        # Get model selection (default to GPT-3.5)
+        model = request.form.get('model', 'gpt-3.5')
         
         if not files or len(files) == 0:
             return jsonify({'error': 'No files provided'}), 400

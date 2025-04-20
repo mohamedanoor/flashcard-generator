@@ -168,7 +168,7 @@ function setupHomePage() {
     });
 // Model selector
 const modelOptions = document.querySelectorAll('.model-option');
-let currentModel = 'gpt-4'; // Default model
+let currentModel = 'gpt-3.5'; // Default model
 
 // Toggle model options
 modelOptions.forEach(option => {

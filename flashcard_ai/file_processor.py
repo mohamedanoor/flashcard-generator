@@ -5,7 +5,7 @@ from flashcard_ai.text_processor import process_text
 from flashcard_ai.flashcard_generator import generate_flashcards
 import io
 
-def process_files(files, difficulty='easy', extract_all=True, use_ocr=False, model='gpt-4'):
+def process_files(files, difficulty='easy', extract_all=True, use_ocr=False, model='gpt-3.5'):
     """
     Process uploaded files and generate flashcards
     
