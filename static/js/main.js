@@ -732,20 +732,26 @@ function setupStudyPage() {
     }
     
     // Toggle between study modes
-    flashcardMode.addEventListener('click', function() {
-        setActiveTab(flashcardMode, [quizMode, writeMode]);
-        switchStudyMode('flashcard');
-    });
+    if (flashcardMode) {
+        flashcardMode.addEventListener('click', function() {
+            setActiveTab(flashcardMode, [quizMode, writeMode]);
+            switchStudyMode('flashcard');
+        });
+    }
     
-    quizMode.addEventListener('click', function() {
-        setActiveTab(quizMode, [flashcardMode, writeMode]);
-        switchStudyMode('quiz');
-    });
+    if (quizMode) {
+        quizMode.addEventListener('click', function() {
+            setActiveTab(quizMode, [flashcardMode, writeMode]);
+            switchStudyMode('quiz');
+        });
+    }
     
-    writeMode.addEventListener('click', function() {
-        setActiveTab(writeMode, [flashcardMode, quizMode]);
-        switchStudyMode('write');
-    });
+    if (writeMode) {
+        writeMode.addEventListener('click', function() {
+            setActiveTab(writeMode, [flashcardMode, quizMode]);
+            switchStudyMode('write');
+        });
+    }
     
     // Function to switch study modes
     function switchStudyMode(mode) {
@@ -884,9 +890,6 @@ function setupStudyPage() {
                     optionElement.classList.add('incorrect');
                     
                     // Highlight the correct answer
-                    const options = quizOptions.querySelectorAll('optionElement.classList.add('incorrect');
-                    
-                    // Highlight the correct answer
                     const options = quizOptions.querySelectorAll('.quiz-option');
                     options.forEach(opt => {
                         if (opt.textContent === correctAnswer) {
@@ -968,6 +971,8 @@ function setupStudyPage() {
                 flashcards = parsed.main;
             } else if (parsed.cards && Array.isArray(parsed.cards)) {
                 flashcards = parsed.cards;
+            } else if (parsed.cards && parsed.cards.main) {
+                flashcards = parsed.cards.main;
             }
             
             // Ensure each card has the expected properties
@@ -985,64 +990,76 @@ function setupStudyPage() {
     }
     
     // Start button handler
-    startBtn.addEventListener('click', function() {
-        if (!loadFlashcards()) {
-            alert('No flashcards found! Please generate and save flashcards first.');
-            return;
-        }
-        
-        startBtn.disabled = true;
-        if (currentStudyMode === 'flashcard') {
-            flipBtn.disabled = false;
-        }
-        nextBtn.disabled = false;
-        
-        // Shuffle the flashcards
-        shuffleArray(flashcards);
-        
-        // Show first card
-        showCard(0);
-        
-        // Start timer
-        studyStartTime = new Date();
-        updateStudyStats();
-        
-        // Start timer for updating study time
-        setInterval(updateStudyTime, 60000); // Update every minute
-    });
+    if (startBtn) {
+        startBtn.addEventListener('click', function() {
+            if (!loadFlashcards()) {
+                alert('No flashcards found! Please generate and save flashcards first.');
+                return;
+            }
+            
+            startBtn.disabled = true;
+            if (currentStudyMode === 'flashcard') {
+                flipBtn.disabled = false;
+            }
+            nextBtn.disabled = false;
+            
+            // Shuffle the flashcards
+            shuffleArray(flashcards);
+            
+            // Show first card
+            showCard(0);
+            
+            // Start timer
+            studyStartTime = new Date();
+            updateStudyStats();
+            
+            // Start timer for updating study time
+            setInterval(updateStudyTime, 60000); // Update every minute
+        });
+    }
     
     // Flip button handler
-    flipBtn.addEventListener('click', function() {
-        toggleFlip();
-        
-        // Show self assessment after flip
-        if (isFlipped) {
-            selfAssessment.style.display = 'block';
-        } else {
-            selfAssessment.style.display = 'none';
-        }
-    });
+    if (flipBtn) {
+        flipBtn.addEventListener('click', function() {
+            toggleFlip();
+            
+            // Show self assessment after flip
+            if (isFlipped) {
+                selfAssessment.style.display = 'block';
+            } else {
+                selfAssessment.style.display = 'none';
+            }
+        });
+    }
     
     // Self assessment buttons
-    hardBtn.addEventListener('click', function() {
-        recordAssessment('hard');
-        nextCard();
-    });
+    if (hardBtn) {
+        hardBtn.addEventListener('click', function() {
+            recordAssessment('hard');
+            nextCard();
+        });
+    }
     
-    mediumBtn.addEventListener('click', function() {
-        recordAssessment('medium');
-        nextCard();
-    });
+    if (mediumBtn) {
+        mediumBtn.addEventListener('click', function() {
+            recordAssessment('medium');
+            nextCard();
+        });
+    }
     
-    easyBtn.addEventListener('click', function() {
-        recordAssessment('easy');
-        nextCard();
-    });
+    if (easyBtn) {
+        easyBtn.addEventListener('click', function() {
+            recordAssessment('easy');
+            nextCard();
+        });
+    }
     
     // Next button handler
-    nextBtn.addEventListener('click', function() {
-        nextCard();
-    });
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            nextCard();
+        });
+    }
     
     function nextCard() {
         if (isFlipped) {
@@ -1054,8 +1071,10 @@ function setupStudyPage() {
         
         // Reset UI for next card
         if (currentStudyMode === 'quiz') {
-            quizOptions.style.display = 'none';
-            nextBtn.disabled = true;
+            if (quizOptions) {
+                quizOptions.style.display = 'none';
+                nextBtn.disabled = true;
+            }
         } else if (currentStudyMode === 'write') {
             // Reset written mode
             if (answerInput) {
@@ -1063,7 +1082,9 @@ function setupStudyPage() {
                 answerInput.disabled = false;
                 answerInput.style.borderColor = '';
                 answerInput.style.backgroundColor = '';
-                checkAnswerBtn.disabled = false;
+                if (checkAnswerBtn) {
+                    checkAnswerBtn.disabled = false;
+                }
                 nextBtn.disabled = true;
             }
         }
