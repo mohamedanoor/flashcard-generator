@@ -10,4 +10,4 @@ pdfminer.six==20221105
 python-docx==0.8.11
 Flask-Login==0.6.2
 Flask-SQLAlchemy==3.0.5
-werkzeug==2.2.3
+werkzeug==2.3.7
