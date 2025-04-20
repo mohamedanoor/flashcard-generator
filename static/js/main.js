@@ -166,6 +166,31 @@ function setupHomePage() {
             currentDifficulty = this.getAttribute('data-level');
         });
     });
+// Model selector
+const modelOptions = document.querySelectorAll('.model-option');
+let currentModel = 'gpt-4'; // Default model
+
+// Toggle model options
+modelOptions.forEach(option => {
+    option.addEventListener('click', function() {
+        // Find the parent model-selector element
+        const parent = this.parentElement;
+        
+        // Remove active class from all options in this selector
+        parent.querySelectorAll('.model-option').forEach(opt => {
+            opt.classList.remove('active');
+        });
+        
+        // Add active class to clicked option
+        this.classList.add('active');
+        
+        // Update current model
+        currentModel = this.getAttribute('data-model');
+        
+        // Optional: Add visual feedback
+        console.log('Model changed to: ' + currentModel);
+    });
+});
     
     // File upload functionality
     if (fileUploadZone) {
