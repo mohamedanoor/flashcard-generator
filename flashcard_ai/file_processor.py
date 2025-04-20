@@ -69,6 +69,8 @@ def process_files(files, difficulty='easy', extract_all=True, use_ocr=False):
         extract_definitions=extract_all,
         create_cloze=extract_all,
         question_answer=True
+        model=model  # Pass model parameter
+
     )
     
     # Add a special card mentioning the source files

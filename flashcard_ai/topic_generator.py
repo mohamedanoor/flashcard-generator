@@ -106,7 +106,7 @@ def search_topic(topic, num_results=2):
         print(f"Error in topic search: {e}")
         return f"Information about {topic} could not be retrieved due to an error."
 
-def generate_topic_flashcards(topic, difficulty='easy', include_definitions=True, include_facts=True, include_dates=False):
+def generate_topic_flashcards(topic, difficulty='easy', include_definitions=True, include_facts=True, include_dates=False, model="gpt-4"):
     """
     Generate flashcards for a specific topic using OpenAI
     
@@ -116,6 +116,7 @@ def generate_topic_flashcards(topic, difficulty='easy', include_definitions=True
         include_definitions (bool): Whether to include definitions
         include_facts (bool): Whether to include key facts
         include_dates (bool): Whether to include dates/timeline
+        model (str): OpenAI model to use ('gpt-3.5-turbo', 'gpt-4')
         
     Returns:
         dict: Dictionary containing different types of flashcards
@@ -150,10 +151,22 @@ def generate_topic_flashcards(topic, difficulty='easy', include_definitions=True
         if not card_types:
             card_types = ["general knowledge question-answer pairs"]
         
-        # Create the prompt
+        # Create enhanced prompts for GPT-4
         system_prompt = """
         You are an expert educator who creates high-quality flashcards about specific topics.
         Your goal is to create effective study materials that help users learn important concepts.
+        
+        IMPORTANT: You must generate the flashcards in the SAME LANGUAGE as the topic input.
+        If the topic is in French, create French flashcards. If it's in Spanish, create Spanish flashcards, etc.
+        Never translate the content to another language - maintain the original language throughout.
+        
+        Guidelines for creating excellent flashcards:
+        1. Each card should focus on a single concept or fact
+        2. Questions should be clear and promote critical thinking
+        3. Answers should be comprehensive yet concise
+        4. Prioritize understanding over memorization
+        5. Create flashcards that build upon each other in complexity
+        6. Ensure factual accuracy and clarity in all cards
         """
         
         user_prompt = f"""
@@ -170,13 +183,18 @@ def generate_topic_flashcards(topic, difficulty='easy', include_definitions=True
         Each list should contain objects with "question" and "answer" keys.
         Make the content concise, clear, and focused on the most important concepts.
         
+        IMPORTANT:
+        - Generate all flashcards in the SAME LANGUAGE as the topic input
+        - DO NOT translate the content to another language
+        - For {difficulty} difficulty, ensure appropriate complexity: {'basic recall for beginners' if difficulty == 'easy' else 'deeper understanding and connections' if difficulty == 'medium' else 'advanced application and critical thinking'}
+        
         Use this information if relevant:
         {topic_text}
         """
         
         # Call the OpenAI API using the new client format
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # You can use "gpt-4" for higher quality but higher cost
+            model=model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}

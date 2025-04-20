@@ -43,7 +43,61 @@ body {
     background-attachment: fixed;
     font-size: 16px;
 }
+/* Model selector */
+.model-selector {
+    display: flex;
+    justify-content: space-between;
+    max-width: 400px;
+    margin: 20px auto;
+    background-color: var(--light-gray);
+    padding: 5px;
+    border-radius: 50px;
+}
 
+.model-option {
+    padding: 8px 20px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.model-option.active {
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.model-option[data-model="gpt-4"] {
+    color: var(--info-dark);
+}
+
+.model-option[data-model="gpt-3.5-turbo"] {
+    color: var(--accent-dark);
+}
+
+.model-option[data-model="gpt-4"].active {
+    background-color: var(--info-color);
+    color: white;
+}
+
+.model-option[data-model="gpt-3.5-turbo"].active {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+/* Add responsive styles for model selector */
+@media (max-width: 480px) {
+    .model-selector {
+        width: 100%;
+    }
+    
+    .model-option {
+        font-size: 12px;
+        padding: 8px 15px;
+    }
+}
 .container {
     max-width: var(--content-width);
     margin: 0 auto;

@@ -9,7 +9,7 @@ load_dotenv()
 # Initialize the OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generate_flashcards(text, difficulty='easy', extract_definitions=False, create_cloze=False, question_answer=True):
+def generate_flashcards(text, difficulty='easy', extract_definitions=False, create_cloze=False, question_answer=True, model="gpt-4"):
     """
     Generate flashcards from text using OpenAI's API
     
@@ -19,6 +19,7 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
         extract_definitions (bool): Whether to extract definitions
         create_cloze (bool): Whether to create cloze deletions
         question_answer (bool): Whether to create question-answer pairs
+        model (str): OpenAI model to use ('gpt-3.5-turbo', 'gpt-4')
         
     Returns:
         dict: Dictionary containing different types of flashcards
@@ -42,6 +43,8 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
             - Identify key concepts, facts, and relationships
             - Create direct questions that test understanding
             - Format as {"question": "What is X?", "answer": "X is Y"}
+            - Ensure answers are comprehensive yet concise
+            - Focus on conceptual understanding rather than mere facts
             """)
             output_format["main"] = "List of question-answer objects with 'question' and 'answer' keys"
         
@@ -51,6 +54,7 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
             - Identify important terms and concepts in the text
             - Create definition cards with the term as the question
             - Format as {"question": "What is [term]?", "answer": "definition of the term"}
+            - Ensure definitions are accurate and capture the essence of the term
             """)
             output_format["definitions"] = "List of definition objects with 'question' and 'answer' keys"
         
@@ -61,6 +65,7 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
             - The question should contain the sentence with a blank (use "_____")
             - The answer should be the missing word or phrase
             - Format as {"question": "Process of _____ involves cell division", "answer": "mitosis"}
+            - Focus on terms that are central to understanding the concept
             """)
             output_format["cloze"] = "List of cloze deletion objects with 'question' and 'answer' keys"
         
@@ -69,11 +74,23 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
             instructions.append("Create basic question-answer pairs")
             output_format["main"] = "List of question-answer objects"
         
-        # Create the prompt
+        # Create enhanced prompts for GPT-4
         system_prompt = """
         You are an expert educator who creates high-quality flashcards from text.
         You must strictly follow the requested format for each flashcard type.
         Separate your output into the exact requested categories (main, definitions, cloze).
+        
+        IMPORTANT: You must generate the flashcards in the SAME LANGUAGE as the input text.
+        If the input text is in French, create French flashcards. If it's in Spanish, create Spanish flashcards, etc.
+        Never translate the content to another language - maintain the original language throughout.
+        
+        Guidelines for creating excellent flashcards:
+        1. Each card should focus on a single concept or fact
+        2. Questions should be clear and unambiguous
+        3. Answers should be comprehensive yet concise
+        4. Prioritize understanding over memorization
+        5. Create flashcards that build upon each other in complexity
+        6. Ensure factual accuracy and clarity in all cards
         """
         
         user_prompt = f"""
@@ -87,10 +104,13 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
         {json.dumps(output_format, indent=2)}
         
         IMPORTANT: 
+        - Generate all flashcards in the SAME LANGUAGE as the input text
+        - DO NOT translate the content to another language
         - DO NOT mix card types - each type must go in its own specific section
         - For definition cards, focus ONLY on terminology definitions
         - For cloze cards, ALWAYS include blanks (____) in the question
         - Make all content concise and clear
+        - For {difficulty} difficulty, ensure appropriate complexity: {'basic recall for beginners' if difficulty == 'easy' else 'deeper understanding and connections' if difficulty == 'medium' else 'advanced application and critical thinking'}
         
         TEXT TO PROCESS:
         {text}
@@ -98,7 +118,7 @@ def generate_flashcards(text, difficulty='easy', extract_definitions=False, crea
         
         # Call the OpenAI API
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}

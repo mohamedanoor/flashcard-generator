@@ -261,7 +261,7 @@ function setupHomePage() {
             formData.append('extract_definitions', extractDefinitions);
             formData.append('create_cloze', createCloze);
             formData.append('question_answer', questionAnswer);
-            
+            formData.append('model', currentModel); // Add model paramater
             fetch('/generate', {
                 method: 'POST',
                 body: formData
@@ -331,7 +331,8 @@ function setupHomePage() {
             formData.append('include_definitions', includeDefinitions);
             formData.append('include_facts', includeFacts);
             formData.append('include_dates', includeDates);
-            
+            formData.append('model', currentModel);  // Add model parameter
+
             fetch('/generate_from_topic', {
                 method: 'POST',
                 body: formData
@@ -399,7 +400,8 @@ function setupHomePage() {
             formData.append('extract_all', extractAll);
             formData.append('use_ocr', useOcr);
             formData.append('difficulty', currentDifficulty);
-            
+            formData.append('model', currentModel);  // Add model parameter
+
             fetch('/generate_from_files', {
                 method: 'POST',
                 body: formData

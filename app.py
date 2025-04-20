@@ -131,6 +131,9 @@ def generate():
         create_cloze = request.form.get('create_cloze') == 'true'
         question_answer = request.form.get('question_answer', 'true') == 'true'
         
+        # Get model selection (default to GPT-4)
+        model = request.form.get('model', 'gpt-4')
+        
         if not text_input:
             return jsonify({'error': 'No text provided'}), 400
         
@@ -147,7 +150,8 @@ def generate():
             difficulty=difficulty,
             extract_definitions=extract_definitions,
             create_cloze=create_cloze,
-            question_answer=question_answer
+            question_answer=question_answer,
+            model=model  # Pass model parameter
         )
         
         # Force garbage collection to free memory
@@ -176,6 +180,9 @@ def generate_from_topic():
         include_facts = request.form.get('include_facts') == 'true'
         include_dates = request.form.get('include_dates') == 'true'
         
+        # Get model selection (default to GPT-4)
+        model = request.form.get('model', 'gpt-4')
+        
         if not topic_input:
             return jsonify({'error': 'No topic provided'}), 400
         
@@ -185,7 +192,8 @@ def generate_from_topic():
             difficulty=difficulty,
             include_definitions=include_definitions,
             include_facts=include_facts,
-            include_dates=include_dates
+            include_dates=include_dates,
+            model=model  # Pass model parameter
         )
         
         # Force garbage collection to free memory
@@ -201,7 +209,7 @@ def generate_from_topic():
         print(f"Error in topic generation route: {str(e)}")
         gc.collect()
         return jsonify({'error': str(e)}), 500
-
+        
 @app.route('/generate_from_files', methods=['POST'])
 def generate_from_files():
     try:
@@ -213,6 +221,9 @@ def generate_from_files():
         extract_all = request.form.get('extract_all') == 'true'
         use_ocr = request.form.get('use_ocr') == 'true'
         
+        # Get model selection (default to GPT-4)
+        model = request.form.get('model', 'gpt-4')
+        
         if not files or len(files) == 0:
             return jsonify({'error': 'No files provided'}), 400
         
@@ -221,7 +232,8 @@ def generate_from_files():
             files,
             difficulty=difficulty,
             extract_all=extract_all,
-            use_ocr=use_ocr
+            use_ocr=use_ocr,
+            model=model  # Pass model parameter
         )
         
         # Force garbage collection to free memory
