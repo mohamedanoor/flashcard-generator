@@ -581,8 +581,8 @@ function setupHomePage() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Also download the file
-                        downloadDeck(deck);
+                        // Download as PDF
+                        downloadDeckAsPDF(deck);
                         alert('Deck saved to your account and downloaded to your computer!');
                     } else {
                         alert('Error saving deck: ' + (data.error || 'Unknown error'));
@@ -599,16 +599,41 @@ function setupHomePage() {
                 localStorage.setItem('savedDecks', JSON.stringify(existingDecks));
                 localStorage.setItem('studyFlashcards', JSON.stringify(currentFlashcards));
                 
-                // Download the deck
-                downloadDeck(deck);
+                // Download as PDF
+                downloadDeckAsPDF(deck);
                 
                 alert('Flashcards saved locally and downloaded to your computer!');
             }
         });
     }
     
-    // Function to download deck
-    function downloadDeck(deck) {
+    // Function to download deck as PDF
+    function downloadDeckAsPDF(deckData) {
+        // Create a form for POST submission
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/download_deck_direct';
+        form.style.display = 'none';
+        
+        // Create hidden input for the data
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'data';
+        input.value = JSON.stringify(deckData);
+        
+        // Append elements and submit form
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+        
+        // Clean up
+        setTimeout(() => {
+            document.body.removeChild(form);
+        }, 500);
+    }
+    
+    // Function to download deck as JSON (kept for backup)
+    function downloadDeckAsJSON(deck) {
         // Generate a downloadable file
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(deck, null, 2));
         const downloadAnchorNode = document.createElement('a');
@@ -857,6 +882,9 @@ function setupStudyPage() {
                     studyStats.correct++;
                 } else {
                     optionElement.classList.add('incorrect');
+                    
+                    // Highlight the correct answer
+                    const options = quizOptions.querySelectorAll('optionElement.classList.add('incorrect');
                     
                     // Highlight the correct answer
                     const options = quizOptions.querySelectorAll('.quiz-option');

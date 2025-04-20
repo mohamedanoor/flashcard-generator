@@ -3,7 +3,7 @@ import sys
 import gc
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_file, make_response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
@@ -282,33 +282,51 @@ def save_deck():
 @app.route('/download_deck/<int:deck_id>')
 @login_required
 def download_deck(deck_id):
-    deck = Deck.query.get_or_404(deck_id)
-    
-    # Ensure user owns this deck
-    if deck.user_id != current_user.id:
-        flash('You do not have permission to download this deck')
+    try:
+        deck = Deck.query.get_or_404(deck_id)
+        
+        # Ensure user owns this deck
+        if deck.user_id != current_user.id:
+            flash('You do not have permission to download this deck')
+            return redirect(url_for('my_decks'))
+        
+        # Get the cards
+        cards = deck.get_cards()
+        
+        # Create HTML for the PDF
+        html_content = render_template(
+            'pdf_template.html',
+            title=deck.title,
+            created=deck.created_at.isoformat(),
+            cards=cards
+        )
+        
+        # Generate PDF and force content-type
+        pdf = HTML(string=html_content).write_pdf()
+        
+        # Create a response with the right headers
+        filename = f"{deck.title.replace(' ', '_')}.pdf"
+        response = make_response(pdf)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    except Exception as e:
+        print(f"Error downloading deck: {str(e)}")
+        flash(f"Error downloading deck: {str(e)}")
         return redirect(url_for('my_decks'))
-    
-    # Get the cards
-    cards = deck.get_cards()
-    
-    # Create HTML for the PDF
-    html_content = render_template(
-        'pdf_template.html',
-        title=deck.title,
-        created=deck.created_at.isoformat(),
-        cards=cards
-    )
-    
-    # Generate PDF from HTML
-    return render_pdf(HTML(string=html_content), 
-                     download_filename=f"{deck.title.replace(' ', '_')}.pdf")
 
 @app.route('/download_deck_direct', methods=['POST'])
 def download_deck_direct():
     """Download deck directly from the form submission"""
     try:
-        data = request.json
+        # Check if the data is coming as JSON or form data
+        if request.is_json:
+            data = request.json
+        elif request.form.get('data'):
+            data = json.loads(request.form.get('data'))
+        else:
+            return jsonify({'error': 'No data provided'}), 400
+            
         if not data:
             return jsonify({'error': 'No data provided'}), 400
             
@@ -320,9 +338,15 @@ def download_deck_direct():
             cards=data.get('cards', {})
         )
         
-        # Generate PDF from HTML
-        return render_pdf(HTML(string=html_content), 
-                         download_filename=f"{data.get('title', 'flashcards').replace(' ', '_')}.pdf")
+        # Generate PDF and force content-type
+        pdf = HTML(string=html_content).write_pdf()
+        
+        # Create a response with the right headers
+        filename = f"{data.get('title', 'flashcards').replace(' ', '_')}.pdf"
+        response = make_response(pdf)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
     except Exception as e:
         print(f"Error downloading deck: {str(e)}")
         return jsonify({'error': str(e)}), 500
