@@ -9,6 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import json
 import tempfile
 from datetime import datetime
+from flask_weasyprint import HTML, render_pdf
 
 from flashcard_ai.text_processor import process_text
 from flashcard_ai.flashcard_generator import generate_flashcards
@@ -19,7 +20,15 @@ from models import db, User, Deck
 # Create Flask application
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-for-flashcards')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///flashcards.db')
+
+# Fix potential Postgres connection string format issue
+database_url = os.environ.get('DATABASE_URL')
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+else:
+    database_url = os.environ.get('DATABASE_URL', 'sqlite:///flashcards.db')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 
@@ -280,26 +289,20 @@ def download_deck(deck_id):
         flash('You do not have permission to download this deck')
         return redirect(url_for('my_decks'))
     
-    # Create a temporary file for the deck
-    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as f:
-        data = {
-            'title': deck.title,
-            'created': deck.created_at.isoformat(),
-            'cards': deck.get_cards()
-        }
-        json.dump(data, f, indent=2)
-        temp_path = f.name
+    # Get the cards
+    cards = deck.get_cards()
     
-    # Create a safe filename
-    safe_filename = f"{deck.title.replace(' ', '_')}.json"
-    
-    # Send the file as an attachment
-    return send_file(
-        temp_path,
-        as_attachment=True,
-        attachment_filename=safe_filename,
-        mimetype='application/json'
+    # Create HTML for the PDF
+    html_content = render_template(
+        'pdf_template.html',
+        title=deck.title,
+        created=deck.created_at.isoformat(),
+        cards=cards
     )
+    
+    # Generate PDF from HTML
+    return render_pdf(HTML(string=html_content), 
+                     download_filename=f"{deck.title.replace(' ', '_')}.pdf")
 
 @app.route('/download_deck_direct', methods=['POST'])
 def download_deck_direct():
@@ -309,21 +312,17 @@ def download_deck_direct():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
             
-        # Create a temporary file for the deck
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as f:
-            json.dump(data, f, indent=2)
-            temp_path = f.name
-        
-        # Create a safe filename
-        safe_filename = f"{data.get('title', 'flashcards').replace(' ', '_')}.json"
-        
-        # Send the file as an attachment
-        return send_file(
-            temp_path,
-            as_attachment=True,
-            attachment_filename=safe_filename,
-            mimetype='application/json'
+        # Create HTML for the PDF
+        html_content = render_template(
+            'pdf_template.html',
+            title=data.get('title', 'Flashcards'),
+            created=datetime.utcnow().isoformat(),
+            cards=data.get('cards', {})
         )
+        
+        # Generate PDF from HTML
+        return render_pdf(HTML(string=html_content), 
+                         download_filename=f"{data.get('title', 'flashcards').replace(' ', '_')}.pdf")
     except Exception as e:
         print(f"Error downloading deck: {str(e)}")
         return jsonify({'error': str(e)}), 500
