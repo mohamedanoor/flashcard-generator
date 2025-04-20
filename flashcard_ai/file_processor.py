@@ -68,7 +68,7 @@ def process_files(files, difficulty='easy', extract_all=True, use_ocr=False):
         difficulty=difficulty,
         extract_definitions=extract_all,
         create_cloze=extract_all,
-        question_answer=True
+        question_answer=True,
         model=model  # Pass model parameter
 
     )
